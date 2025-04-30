@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4cc9f0;
+            --success-color: #4ad66d;
+            --warning-color: #f8961e;
+            --danger-color: #f94144;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            position: relative;
+            margin: 0;
+            padding: 0;
+            perspective: 1000px;
+			background:pink;
+            
+           
+        }
+
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            transform-style: preserve-3d;
+
+        }
+
+        #background-video {
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           z-index: -2;
+           object-fit: cover;
+           filter: brightness(0.7);
+
+
+        }
+
+        .video-fallback {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            animation: gradientShift 15s ease infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            background-color: rgba(255, 255, 255, 0.92);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin: 20px;
+            backdrop-filter: blur(5px);
+            transform-style: preserve-3d;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .container:hover {
+            transform: translateY(-5px) rotateX(1deg) rotateY(1deg);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .grid {
+            display: grid;
+            gap: 5px;
+            margin: 20px auto;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        button.cell {
+            font-size: 24px;
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-radius: 8px;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            color: #333;
+            font-weight: 600;
+        }
+
+        button.cell::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0));
+            border-radius: 8px;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        button.cell:hover {
+            background: linear-gradient(145deg, #ffffff, #ffd166);
+            transform: scale(1.05) translateY(-3px) rotateX(5deg);
+            box-shadow: 0 7px 15px rgba(0,0,0,0.2);
+        }
+
+        button.cell:hover::before {
+            opacity: 1;
+        }
+
+        button.cell:active {
+            transform: scale(0.98) translateY(0) rotateX(0);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.1s ease;
+        }
+
+        .empty {
+            background: transparent !important;
+            cursor: default;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        .message {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--success-color);
+            min-height: 24px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .btn {
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(67, 97, 238, 0.3);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            z-index: 1;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, var(--secondary-color), var(--primary-color));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            border-radius: 50px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 15px rgba(67, 97, 238, 0.4);
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn:active {
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.3);
+            transition: all 0.1s ease;
+        }
+
+        .btn:disabled {
+            background: linear-gradient(to right, #cccccc, #aaaaaa);
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+        }
+
+        /* Ripple effect */
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%, -50%);
+            transform-origin: 50% 50%;
+        }
+
+        .btn:focus:not(:active)::after {
+            animation: ripple 0.6s ease-out;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(20, 20);
+                opacity: 0;
+            }
+        }
+
+        .coin-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .coin {
+            position: relative;
+            width: 30px;
+            height: 30px;
+            transform-style: preserve-3d;
+            animation: spin 3s infinite linear;
+            margin-right: 10px;
+        }
+
+        .coin-front, .coin-back {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(145deg, #ffdd00, #ffd700);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+            backface-visibility: hidden;
+        }
+
+        .coin-front {
+            transform: translateZ(2px);
+        }
+
+        .coin-back {
+            transform: rotateY(180deg) translateZ(2px);
+        }
+
+        @keyframes spin {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .stat-box {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            flex-grow: 1;
+            min-width: 100px;
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .timer {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        /* Confetti explosion */
+        @keyframes confetti-fall {
+            0% { 
+                transform: translateY(-100vh) rotate(0deg); 
+                opacity: 1;
+            }
+            100% { 
+                transform: translateY(100vh) rotate(360deg); 
+                opacity: 0;
+            }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0;
+            z-index: 100;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        /* Tile movement animation */
+        @keyframes tileSlide {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(var(--tx), var(--ty)) scale(1.1); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        .tile-slide {
+            animation: tileSlide 0.3s ease-out;
+            z-index: 2;
+        }
+
+        /* Level transition */
+        @keyframes levelTransitionIn {
+            0% { transform: scale(0.8) rotateY(90deg); opacity: 0; }
+            100% { transform: scale(1) rotateY(0); opacity: 1; }
+        }
+
+        .level-transition {
+            animation: levelTransitionIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Currency gain animation */
+        @keyframes coinBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.2); }
+        }
+
+        .coin-bounce {
+            animation: coinBounce 0.5s ease;
+        }
+
+        /* Best scores highlight */
+        @keyframes scoreHighlight {
+            0% { color: inherit; transform: scale(1); }
+            50% { color: var(--success-color); transform: scale(1.1); }
+            100% { color: inherit; transform: scale(1); }
+        }
+
+        .score-highlight {
+            animation: scoreHighlight 1s ease;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #333;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            position: relative;
+            display: inline-block;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        h1:hover::after {
+            transform: scaleX(1);
+        }
+
+        .best-scores {
+            margin-top: 5px;
+            font-size: 0.8em;
+            color: #555;
+        }
+
+        /* Particle effect for win */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+<div id="video-container">
+    <!-- Replace with your video file -->
+    <video id="background-video" autoplay loop muted playsinline>
+        <source src="C:\Users\DEVI ANITHA\Downloads\vecteezy_cute-birds-frame-with-copy-space-2d-looping-animation_51252478.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="video-fallback" id="video-fallback"></div>
+</div>
+
+
+
+<!-- Replace with your audio file -->
+<audio id="background-music" loop>
+    <source src="C:\Users\DEVI ANITHA\Downloads\playful-kids-toys-vlog-music-246603.mp3" type="audio/mp3">
+</audio>
+
+<div class="container" id="game-container">
+    <h1>Puzzle Game</h1>
+    
+    <div class="stats-container">
+        <div class="stat-box">
+            <div class="coin-container">
+                <div class="coin">
+                    <div class="coin-front">💰</div>
+                    <div class="coin-back">💰</div>
+                </div>
+                <div id="currency">0</div>
+            </div>
+        </div>
+        
+        <div class="stat-box">
+            <div>Level: <span id="level">1</span>/5</div>
+            <div class="best-scores">
+                Best: <span id="best-moves">--</span> moves | <span id="best-time">--</span>
+            </div>
+        </div>
+        
+        <div class="stat-box">
+            <div>Moves: <span id="moves">0</span></div>
+            <div class="timer" id="timer">00:00</div>
+        </div>
+    </div>
+
+    <div class="grid" id="puzzle-grid"></div>
+    
+    <div class="message" id="message"></div>
+    
+    <div class="controls">
+        <button class="btn" id="back-button">Back</button>
+        <button class="btn" id="start-button">Start Game</button>
+        <button class="btn" id="next-button">Next Level</button>
+    </div>
+</div>
+
+<!-- Tile click sound (using built-in audio) -->
+<audio id="tile-click-sound">
+    <source src="C:\Users\DEVI ANITHA\Downloads\button-202966.mp3" type="audio/mp3">
+</audio>
+
+<!-- Win sound -->
+<audio id="win-sound">
+    <source src="C:\Users\DEVI ANITHA\Downloads\brass-fanfare-with-timpani-and-winchimes-reverberated-146260.mp3" type="audio/mp3">
+</audio>
+
+<script>
+    // Game configuration
+    const MAX_LEVEL = 5;
+    const START_GRID_SIZE = 3;
+    let level = 1;
+    let moves = 0;
+    let puzzlePieces = [];
+    let gameStarted = false;
+    let currency = 0;
+    let timer;
+    let elapsedTime = 0;
+    let bestScores = JSON.parse(localStorage.getItem('puzzleBestScores')) || {};
+
+    // DOM elements
+    const gridElement = document.getElementById('puzzle-grid');
+    const levelElement = document.getElementById('level');
+    const movesElement = document.getElementById('moves');
+    const messageElement = document.getElementById('message');
+    const currencyElement = document.getElementById('currency');
+    const timerElement = document.getElementById('timer');
+    const startButton = document.getElementById('start-button');
+    const nextButton = document.getElementById('next-button');
+    const backButton = document.getElementById('back-button');
+    const bestMovesElement = document.getElementById('best-moves');
+    const bestTimeElement = document.getElementById('best-time');
+    const backgroundVideo = document.getElementById('background-video');
+    const videoFallback = document.getElementById('video-fallback');
+    const backgroundMusic = document.getElementById('background-music');
+    const tileClickSound = document.getElementById('tile-click-sound');
+    const winSound = document.getElementById('win-sound');
+    const gameContainer = document.getElementById('game-container');
+
+    // Initialize video
+    function initVideo() {
+        // Try to play video (will work if autoplay is allowed)
+        const videoPromise = backgroundVideo.play();
+        
+        if (videoPromise !== undefined) {
+            videoPromise.catch(e => {
+                console.log("Video autoplay blocked, showing fallback");
+                backgroundVideo.style.display = 'none';
+                videoFallback.style.display = 'block';
+            });
+        }
+    }
+
+    // Initialize audio
+    function initAudio() {
+        backgroundMusic.volume = 0.3;
+        
+        // Enable audio on first user interaction
+        const enableAudio = () => {
+            backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+            document.removeEventListener('click', enableAudio);
+        };
+        document.addEventListener('click', enableAudio);
+    }
+
+    // Create confetti explosion
+    function createConfetti() {
+        const colors = ['#f94144', '#f8961e', '#f9c74f', '#90be6d', '#43aa8b', '#577590'];
+        
+        for (let i = 0; i < 100; i++) {
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti');
+            
+            // Random properties
+            const size = Math.random() * 10 + 5;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const left = Math.random() * 100;
+            const animationDuration = Math.random() * 3 + 2;
+            const delay = Math.random() * 2;
+            
+            confetti.style.width = `${size}px`;
+            confetti.style.height = `${size}px`;
+            confetti.style.backgroundColor = color;
+            confetti.style.left = `${left}%`;
+            confetti.style.animationDuration = `${animationDuration}s`;
+            confetti.style.animationDelay = `${delay}s`;
+            
+            // Random shape
+            if (Math.random() > 0.5) {
+                confetti.style.borderRadius = '50%';
+            } else {
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+            }
+            
+            document.body.appendChild(confetti);
+            
+            // Remove after animation
+            setTimeout(() => {
+                confetti.remove();
+            }, (animationDuration + delay) * 1000);
+        }
+    }
+
+    // Create particle effect
+    function createParticles(x, y, color, count = 30) {
+        for (let i = 0; i < count; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            const size = Math.random() * 15 + 5;
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = Math.random() * 5 + 2;
+            const distance = Math.random() * 100 + 50;
+            
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.backgroundColor = color;
+            particle.style.left = `${x}px`;
+            particle.style.top = `${y}px`;
+            
+            document.body.appendChild(particle);
+            
+            // Animate particle
+            const animation = particle.animate([
+                { 
+                    transform: 'translate(0, 0) scale(1)',
+                    opacity: 1 
+                },
+                { 
+                    transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`,
+                    opacity: 0 
+                }
+            ], {
+                duration: Math.random() * 1000 + 500,
+                easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+            });
+            
+            animation.onfinish = () => particle.remove();
+        }
+    }
+
+    // Initialize game
+    const initGame = () => {
+        moves = 0;
+        elapsedTime = 0;
+        movesElement.textContent = moves;
+        timerElement.textContent = '00:00';
+        
+        const gridSize = START_GRID_SIZE + (level - 1);
+        puzzlePieces = shufflePieces(gridSize);
+        
+        // Add level transition animation
+        gameContainer.classList.add('level-transition');
+        setTimeout(() => {
+            gameContainer.classList.remove('level-transition');
+        }, 500);
+        
+        renderPuzzle();
+        gameStarted = true;
+        messageElement.classList.remove('show');
+        startButton.textContent = 'Restart Level';
+        
+        nextButton.disabled = (level >= MAX_LEVEL);
+        backButton.disabled = (level <= 1);
+        
+        loadBestScores();
+        startTimer();
+    };
+
+    // Shuffle puzzle pieces
+    const shufflePieces = (size) => {
+        let pieces = [];
+        let id = 0;
+        
+        // Create ordered pieces
+        for (let i = 0; i < size; i++) {
+            pieces[i] = [];
+            for (let j = 0; j < size; j++) {
+                pieces[i][j] = { id: id++, value: i * size + j + 1 };
+            }
+        }
+        // Set last piece as empty
+        pieces[size - 1][size - 1].value = 0;
+
+        // Shuffle pieces (Fisher-Yates algorithm)
+        for (let i = size - 1; i > 0; i--) {
+            for (let j = size - 1; j > 0; j--) {
+                const randomI = Math.floor(Math.random() * (i + 1));
+                const randomJ = Math.floor(Math.random() * (j + 1));
+                [pieces[i][j], pieces[randomI][randomJ]] = [pieces[randomI][randomJ], pieces[i][j]];
+            }
+        }
+        
+        return pieces;
+    };
+
+    // Render puzzle grid
+    const renderPuzzle = () => {
+        const size = puzzlePieces.length;
+        // Adjust cell size based on level (smaller for higher levels)
+        const cellSize = Math.max(50, 80 - (level * 5));
+        
+        gridElement.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
+        gridElement.style.gridTemplateRows = `repeat(${size}, ${cellSize}px)`;
+        gridElement.innerHTML = '';
+        
+        for (let i = 0; i < size; i++) {
+            for (let j = 0; j < size; j++) {
+                const button = document.createElement('button');
+                button.className = 'cell' + (puzzlePieces[i][j].value === 0 ? ' empty' : '');
+                button.textContent = puzzlePieces[i][j].value !== 0 ? puzzlePieces[i][j].value : '';
+                button.dataset.row = i;
+                button.dataset.col = j;
+                
+                // Add click handler with sound
+                button.addEventListener('click', () => {
+                    if (puzzlePieces[i][j].value !== 0) {
+                        tileClickSound.currentTime = 0;
+                        tileClickSound.play().catch(e => console.log("Tile sound error:", e));
+                        createParticles(
+                            button.getBoundingClientRect().left + button.offsetWidth / 2,
+                            button.getBoundingClientRect().top + button.offsetHeight / 2,
+                            '#4cc9f0',
+                            5
+                        );
+                    }
+                    handleMove(i, j);
+                });
+                
+                gridElement.appendChild(button);
+            }
+        }
+    };
+
+    // Handle tile movement
+    const handleMove = (row, col) => {
+        if (!gameStarted || puzzlePieces[row][col].value === 0) return;
+        
+        const emptyCell = findEmptyCell();
+        if (isValidMove(row, col, emptyCell.row, emptyCell.col)) {
+            // Animate the tile movement
+            const tile = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            const emptyTile = document.querySelector(`[data-row="${emptyCell.row}"][data-col="${emptyCell.col}"]`);
+            
+            if (tile && emptyTile) {
+                // Calculate movement direction
+                const dx = (emptyCell.col - col) * (tile.offsetWidth + 5);
+                const dy = (emptyCell.row - row) * (tile.offsetHeight + 5);
+                
+                tile.style.setProperty('--tx', `${dx}px`);
+                tile.style.setProperty('--ty', `${dy}px`);
+                tile.classList.add('tile-slide');
+                
+                // Remove animation class after it completes
+                setTimeout(() => {
+                    tile.classList.remove('tile-slide');
+                }, 300);
+            }
+            
+            // Swap pieces
+            puzzlePieces[emptyCell.row][emptyCell.col].value = puzzlePieces[row][col].value;
+            puzzlePieces[row][col].value = 0;
+            
+            moves++;
+            movesElement.textContent = moves;
+            renderPuzzle();
+            
+            if (isPuzzleSolved()) {
+                handleWin();
+            }
+        }
+    };
+
+    // Find empty cell
+    const findEmptyCell = () => {
+        for (let i = 0; i < puzzlePieces.length; i++) {
+            for (let j = 0; j < puzzlePieces[i].length; j++) {
+                if (puzzlePieces[i][j].value === 0) {
+                    return { row: i, col: j };
+                }
+            }
+        }
+        return { row: -1, col: -1 };
+    };
+
+    // Check if move is valid
+    const isValidMove = (row, col, emptyRow, emptyCol) => {
+        return (Math.abs(row - emptyRow) === 1 && col === emptyCol) || 
+               (Math.abs(col - emptyCol) === 1 && row === emptyRow);
+    };
+
+    // Check if puzzle is solved
+    const isPuzzleSolved = () => {
+        let count = 1;
+        const size = puzzlePieces.length;
+        
+        for (let i = 0; i < size; i++) {
+            for (let j = 0; j < size; j++) {
+                if (i === size - 1 && j === size - 1) {
+                    if (puzzlePieces[i][j].value !== 0) return false;
+                } else if (puzzlePieces[i][j].value !== count) {
+                    return false;
+                }
+                count++;
+            }
+        }
+        return true;
+    };
+
+    // Handle level completion
+    const handleWin = () => {
+        stopTimer();
+        gameStarted = false;
+        
+        // Play win sound
+        winSound.currentTime = 0;
+        winSound.play().catch(e => console.log("Win sound error:", e));
+        
+        // Create celebration effects
+        createConfetti();
+        
+        // Calculate rewards - exactly level * 10 coins
+        const coinsEarned = level * 10;
+        currency += coinsEarned;
+        
+        // Animate currency update
+        const currencyDisplay = currencyElement;
+        let currentDisplay = parseInt(currencyDisplay.textContent);
+        const increment = Math.ceil(coinsEarned / 20); // Split into 20 steps
+        
+        const updateCurrency = () => {
+            currentDisplay += increment;
+            if (currentDisplay >= currency) {
+                currentDisplay = currency;
+                clearInterval(currencyInterval);
+            }
+            currencyDisplay.textContent = currentDisplay;
+            currencyDisplay.classList.add('coin-bounce');
+            setTimeout(() => {
+                currencyDisplay.classList.remove('coin-bounce');
+            }, 500);
+        };
+        
+        const currencyInterval = setInterval(updateCurrency, 50);
+        
+        // Update UI with correct coin reward
+        messageElement.textContent = `Level ${level} Complete! +${coinsEarned} coins`;
+        messageElement.classList.add('show');
+        
+        nextButton.disabled = (level >= MAX_LEVEL);
+        backButton.disabled = (level <= 1);
+        
+        saveBestScores();
+    };
+
+    // Timer functions
+    const startTimer = () => {
+        clearInterval(timer);
+        elapsedTime = 0;
+        updateTimerDisplay();
+        
+        timer = setInterval(() => {
+            elapsedTime++;
+            updateTimerDisplay();
+        }, 1000);
+    };
+
+    const stopTimer = () => {
+        clearInterval(timer);
+    };
+
+    const updateTimerDisplay = () => {
+        const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
+        const seconds = (elapsedTime % 60).toString().padStart(2, '0');
+        timerElement.textContent = `${minutes}:${seconds}`;
+    };
+
+    // Best scores management
+    const loadBestScores = () => {
+        const levelKey = `level-${level}`;
+        if (bestScores[levelKey]) {
+            bestMovesElement.textContent = bestScores[levelKey].moves;
+            
+            const bestTime = bestScores[levelKey].time;
+            const minutes = Math.floor(bestTime / 60).toString().padStart(2, '0');
+            const seconds = (bestTime % 60).toString().padStart(2, '0');
+            bestTimeElement.textContent = `${minutes}:${seconds}`;
+            
+            // Highlight if we have best scores
+            bestMovesElement.classList.add('score-highlight');
+            bestTimeElement.classList.add('score-highlight');
+            setTimeout(() => {
+                bestMovesElement.classList.remove('score-highlight');
+                bestTimeElement.classList.remove('score-highlight');
+            }, 1000);
+        } else {
+            bestMovesElement.textContent = '--';
+            bestTimeElement.textContent = '--';
+        }
+    };
+
+    const saveBestScores = () => {
+        const levelKey = `level-${level}`;
+        
+        if (!bestScores[levelKey] || 
+            moves < bestScores[levelKey].moves || 
+            elapsedTime < bestScores[levelKey].time) {
+            
+            bestScores[levelKey] = {
+                moves: moves,
+                time: elapsedTime
+            };
+            
+            localStorage.setItem('puzzleBestScores', JSON.stringify(bestScores));
+            loadBestScores();
+        }
+    };
+
+    // Event listeners for buttons
+    startButton.addEventListener('click', () => {
+        level = 1;
+        levelElement.textContent = level;
+        currency = 0;
+        currencyElement.textContent = currency;
+        initGame();
+    });
+
+    nextButton.addEventListener('click', () => {
+        if (level < MAX_LEVEL) {
+            level++;
+            levelElement.textContent = level;
+            initGame();
+        }
+    });
+
+    backButton.addEventListener('click', () => {
+        if (level > 1) {
+            level--;
+            levelElement.textContent = level;
+            initGame();
+        }
+    });
+
+    // Add magnetic effect to buttons
+    document.querySelectorAll('.btn').forEach(button => {
+        button.addEventListener('mousemove', (e) => {
+            const rect = button.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            button.style.setProperty('--x', `${x}px`);
+            button.style.setProperty('--y', `${y}px`);
+        });
+    });
+
+    // Initialize the game when page loads
+    window.addEventListener('DOMContentLoaded', () => {
+        initVideo();
+        initAudio();
+        loadBestScores();
+        backButton.disabled = (level <= 1);
+        nextButton.disabled = (level >= MAX_LEVEL);
+    });
+</script>
+</body>
+</html>

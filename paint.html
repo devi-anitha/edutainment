@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painting Game for Kids</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: pink;
+            background-image: url("C:\Users\DEVI ANITHA\Pictures\bik.jpg");
+        }
+        .container {
+            display: flex;
+            align-items: center;
+        }
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 20px;
+        }
+        .shape-button {
+            width: 50px;
+            height: 50px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .shape-button:hover {
+            transform: scale(1.1);
+        }
+        #rectangle-button { background-color: #FF6347; }
+        #circle-button { background-color: #4682B4; }
+        #line-button { background-color: #32CD32; }
+        #free-button { background-color: #FFD700; }
+        .tools, .shape-options {
+            margin-bottom: 10px;
+        }
+        label {
+            margin-right: 10px;
+        }
+        canvas {
+            border: 2px solid #000;
+            cursor: crosshair;
+            background-color: #FFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <button id="rectangle-button" class="shape-button" title="Rectangle">▭</button>
+            <button id="circle-button" class="shape-button" title="Circle">⬤</button>
+            <button id="line-button" class="shape-button" title="Line">➖</button>
+            <button id="free-button" class="shape-button" title="Free Draw">✏️</button>
+        </div>
+        <div>
+            <div class="tools">
+                <label for="color-picker">Choose Color:</label>
+                <input type="color" id="color-picker" value="#000000">
+                <label for="brush-size">Brush Size:</label>
+                <input type="range" id="brush-size" min="1" max="50" value="5">
+                <button id="clear-canvas">Clear All</button>
+                <button id="undo">⬅️</button>
+                <button id="eraser">🧽</button>
+                 <button class="icon-button" id="save" title="Save">💾</button>
+            </div>
+            <div class="shape-options" id="shape-options" style="display: none;">
+                <label for="shape-ratio">Choose Ratio/Radius:</label>
+                <select id="shape-ratio">
+                    <option value="1">1:1</option>
+                    <option value="2">2:1</option>
+                    <option value="0.5">1:2</option>
+                </select>
+            </div>
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('color-picker');
+        const brushSize = document.getElementById('brush-size');
+        const clearCanvasButton = document.getElementById('clear-canvas');
+        const undoButton = document.getElementById('undo');
+        const eraserButton = document.getElementById('eraser');
+        const saveButton = document.getElementById('save');
+        const rectangleButton = document.getElementById('rectangle-button');
+        const circleButton = document.getElementById('circle-button');
+        const lineButton = document.getElementById('line-button');
+        const freeButton = document.getElementById('free-button');
+
+        const shapeOptions = document.getElementById('shape-options');
+        const shapeRatio = document.getElementById('shape-ratio');
+
+        let isDrawing = false;
+        let shape = 'free';
+        let isEraserActive = false;
+        let startX, startY;
+        let canvasStates = []; // Stack to save canvas states
+
+        // Function to save the current state of the canvas
+        function saveCanvasState() {
+            canvasStates.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        }
+
+        rectangleButton.addEventListener('click', () => selectShape('rectangle'));
+        circleButton.addEventListener('click', () => selectShape('circle'));
+        lineButton.addEventListener('click', () => selectShape('line'));
+        freeButton.addEventListener('click', () => selectShape('free'));
+
+        function selectShape(selectedShape) {
+            shape = selectedShape;
+            isEraserActive = false;
+            colorPicker.disabled = false;
+            eraserButton.textContent = '🧽';
+
+            shapeOptions.style.display = (shape !== 'free') ? 'block' : 'none';
+        }
+
+        canvas.addEventListener('mousedown', (event) => {
+            saveCanvasState(); // Save the canvas state on new drawing
+            isDrawing = true;
+            const pos = getMousePosition(event);
+            startX = pos.x;
+            startY = pos.y;
+
+            if (shape === 'free') {
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            }
+        });
+
+        canvas.addEventListener('mousemove', (event) => {
+            if (!isDrawing) return;
+            const pos = getMousePosition(event);
+
+            if (shape === 'free') {
+                ctx.lineWidth = brushSize.value;
+                ctx.strokeStyle = isEraserActive ? '#FFFFFF' : colorPicker.value;
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            }
+        });
+
+        canvas.addEventListener('mouseup', (event) => {
+            isDrawing = false;
+            ctx.closePath();
+
+            if (shape !== 'free') {
+                drawShape(getMousePosition(event));
+            }
+        });
+
+        function drawShape(endPos) {
+            ctx.lineWidth = brushSize.value;
+            ctx.strokeStyle = colorPicker.value;
+            ctx.beginPath();
+            const ratio = parseFloat(shapeRatio.value);
+
+            switch (shape) {
+                case 'rectangle':
+                    ctx.rect(startX, startY, 50 * ratio, 50);
+                    break;
+                case 'circle':
+                    ctx.arc(startX, startY, 25 * ratio, 0, 2 * Math.PI);
+                    break;
+                case 'line':
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(startX + (50 * ratio), startY);
+                    break;
+            }
+            ctx.stroke();
+        }
+
+        function getMousePosition(event) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            };
+        }
+
+        clearCanvasButton.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvasStates = []; // Clear canvas states
+        });
+
+        eraserButton.addEventListener('click', () => {
+            isEraserActive = !isEraserActive;
+            eraserButton.textContent = isEraserActive ? '🖌️' : '🧽';
+            colorPicker.disabled = isEraserActive;
+            shape = 'free';
+        });
+
+        undoButton.addEventListener('click', () => {
+            if (canvasStates.length > 0) {
+                ctx.putImageData(canvasStates.pop(), 0, 0); // Restore the last canvas state
+            }
+        });
+        saveButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'drawing.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        // Save the current state of the canvas
+        function saveState() {
+            history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

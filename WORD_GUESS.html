@@ -1,0 +1,1210 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guess Word</title>
+  <!-- Add Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Add Animate.css for animations -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  <style>
+    /* Global Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      perspective: 1000px;
+      color: white;
+    }
+
+    /* Video Background with Overlay */
+    .video-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      object-fit: cover;
+      filter: brightness(0.7);
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      
+      z-index: -1;
+    }
+
+    #root {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .container {
+      background-color: rgba(255, 182, 193, 0.9);
+      border-radius: 20px;
+      box-shadow: 0px 0px 30px rgba(255, 255, 255, 0.3);
+      padding: 30px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      position: relative;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transform-style: preserve-3d;
+      transition: all 0.5s ease;
+    }
+
+    .container:hover {
+      transform: perspective(1000px) rotateX(5deg) rotateY(5deg) scale(1.02);
+      box-shadow: 0px 0px 40px rgba(255, 255, 255, 0.4);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: white;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+      margin-bottom: 20px;
+      background: linear-gradient(45deg, #ff8a00, #e52e71);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientShift 5s ease infinite;
+      background-size: 200% 200%;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    p {
+      font-size: 1.2rem;
+      color: white;
+      margin: 15px 0;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .input-container {
+      margin: 25px 0;
+      position: relative;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      background-color: rgba(255, 255, 255, 0.9);
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #e52e71;
+      box-shadow: 0 0 10px rgba(229, 46, 113, 0.5);
+      transform: scale(1.02);
+    }
+
+    button {
+      background: linear-gradient(45deg, #4CAF50, #2E8B57);
+      color: white;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 7px 20px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(45deg, #2E8B57, #4CAF50);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, #45a049, #4CAF50);
+      z-index: -1;
+      transition: opacity 0.3s ease;
+      opacity: 0;
+    }
+
+    button:hover::after {
+      opacity: 1;
+    }
+
+    .result, .score, .tries {
+      margin-top: 20px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .result {
+      color: white;
+      background-color: rgba(0, 123, 255, 0.7);
+      animation: pulse 2s infinite;
+    }
+
+    .tries {
+      color: white;
+      background-color: rgba(255, 0, 0, 0.7);
+    }
+
+    .score {
+      color: white;
+      background-color: rgba(76, 175, 80, 0.7);
+    }
+
+    .level-info {
+      font-weight: bold;
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+      color: white;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .total-levels {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: white;
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 5px 10px;
+      border-radius: 20px;
+    }
+
+    /* Audio Control */
+    #audio-control {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    #audio-control:hover {
+      background: rgba(0, 0, 0, 0.7);
+      transform: scale(1.1);
+    }
+
+    /* Confetti */
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #f00;
+      opacity: 0;
+    }
+
+    /* Floating animations */
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .floating {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .container {
+        width: 95%;
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Video -->
+  <video autoplay muted loop class="video-background">
+    <source src="C:\Users\DEVI ANITHA\Downloads\vecteezy_cartoon-background-school-border_3439984.mp4" type="video/mp4">
+    Your browser does not support HTML5 video.
+  </video>
+  <div class="overlay"></div>
+
+  <!-- Audio Elements -->
+  <audio id="background-audio" loop>
+    <source src="C:\Users\DEVI ANITHA\Downloads\happy-bird-1-sad-strings-loop-e-minor-120bpm-202821.mp3" type="audio/mpeg">
+  </audio>
+  
+  <audio id="correct-sound">
+    <source src="C:\Users\DEVI ANITHA\Downloads\manly-voice-quotsuperquot-295403.mp3" type="audio/mpeg">
+  </audio>
+  
+  <audio id="incorrect-sound">
+    <source src="C:\Users\DEVI ANITHA\Downloads\sadwhisle-91469.mp3" type="audio/mpeg">
+  </audio>
+  
+  <!-- Audio Control Button -->
+  <button id="audio-control">
+    <i class="fas fa-volume-up"></i>
+  </button>
+
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script type="text/babel">
+    const levels = [
+      {
+        id: 1,
+        words: [
+          { word: 'Apple', hint: 'A type of fruit' },
+          { word: 'Dog', hint: 'A type of animal' },
+          { word: 'Car', hint: 'A type of vehicle' },
+        ],
+      },
+      {
+        id: 2,
+        words: [
+          { word: 'Sun', hint: 'The star at the center of our solar system' },
+          { word: 'Small', hint: 'Opposite of big' },
+          { word: 'Pen', hint: 'A type of writing instrument' },
+        ],
+      },
+      {
+        id: 3,
+        words: [
+          { word: 'Book', hint: 'Sounds like hook' },
+          { word: 'Chair', hint: 'A type of furniture' },
+          { word: 'Phone', hint: 'A type of communication device' },
+        ],
+      },
+      {
+        id: 4,
+        words: [
+          { word: 'Table', hint: 'Often paired with chairs' },
+          { word: 'Bicycle', hint: 'Environmentally friendly transportation' },
+          { word: 'Toothbrush', hint: 'Part of daily oral hygiene' },
+        ],
+      },
+      {
+        id: 5,
+        words: [
+          { word: 'Ship', hint: 'Where seas meet destiny' },
+          { word: 'Mirror', hint: 'Used for grooming and self-reflection' },
+          { word: 'Bus', hint: 'A large vehicle for transporting people' },
+        ],
+      },
+        {
+    id: 6,
+    words: [
+      { word: 'Carrot', hint: 'A long orange vegetable' },
+      { word: 'Red', hint: 'The color of roses or stop sign' },
+      { word: 'Player', hint: 'A person participating in a game or sport' },
+    ],
+  },
+  {
+    id: 7,
+    words: [
+      { word: 'Football', hint: 'National sport of France' },
+      { word: 'Wallet', hint: 'A symbol of financial security' },
+      { word: 'Umbrella', hint: 'A portable shield' },
+    ],
+  },
+  {
+    id: 8,
+    words: [
+      { word: 'Chocolate', hint: 'you all like me a lot' },
+      { word: 'Tissue', hint: 'Sounds like issue' },
+      { word: 'Swimming', hint: 'Dancing with the waves' },
+    ],
+  },
+  {
+    id: 9,
+    words: [
+      { word: 'Friend', hint: 'A person you know and like' },
+      { word: 'Flower', hint: 'A colorful part of a plant, often fragrant' },
+      { word: 'Painting', hint: 'Iam an art' },
+    ],
+  },
+  {
+    id: 10,
+    words: [
+      { word: 'Lipstick', hint: 'Painting a pretty smile' },
+      { word: 'Photography', hint: 'Preserving memories & evoking emotions' },
+      { word: 'Water', hint: 'A liquid essential for life' },
+    ],
+  },
+   {
+    id: 11,
+    words: [
+      { word: 'Listen', hint: 'To pay attention to sounds or someone speaking' },
+      { word: 'Rain', hint: 'Formed through the water cycle and condensation' },
+      { word: 'Teacher', hint: 'A guide who helps students learn and grow' },
+    ],
+  },
+  {
+    id: 12,
+    words: [
+      { word: 'Storm', hint: 'A severe whether condition with strong winds and rain' },
+      { word: 'Snow', hint: 'Frozen water crystals that fall from the sky' },
+      { word: 'Atmosphere', hint: 'The layer of gases surronded the earth' },
+    ],
+  },
+  {
+    id: 13,
+    words: [
+      { word: 'Piano', hint: 'A type of musical instrument' },
+      { word: 'Observation', hint: 'The act of paying attention or paying attention' },
+      { word: 'Sense', hint: 'Realted to sight,sound,touch,or smell' },
+    ],
+  },
+  {
+    id: 14,
+    words: [
+      { word: 'Travel', hint: 'To move from one place to another amd sounds like naval' },
+      { word: 'Diary', hint: 'something you might keep under your bed' },
+      { word: 'Quotient', hint: 'A numerical value resulting from devision' },
+    ],
+  },
+  {
+    id: 15,
+    words: [
+      { word: 'Triangle', hint: 'I have 3 sides only' },
+      { word: 'Solid', hint: 'Physical state or property' },
+      { word: 'Hour', hint: 'Iam equals to sixty minutes' },
+    ],
+  },
+  {
+    id: 16,
+    words: [
+      { word: 'Infant', hint: 'Very young child' },
+      { word: 'Sibling', hint: 'A relative, Sounds like hibling' },
+      { word: 'thermometer', hint: 'A type of scientific instrument' },
+    ],
+  },
+  {
+    id: 17,
+    words: [
+      { word: 'barometer', hint: 'A type of scientific instrument' },
+      { word: 'hygrometer', hint: 'A type of scientific instrument' },
+      { word: 'anemometer', hint: 'A type of scientific instrument' },
+    ],
+  },
+  {
+    id: 18,
+    words: [
+      { word: 'seismograph', hint: 'A type of scientific instrument' },
+      { word: 'spectrometer', hint: 'A type of scientific instrument' },
+      { word: 'chromatograph', hint: 'A type of scientific instrument' },
+    ],
+  },
+  {
+    id: 19,
+    words: [
+      { word: 'electrophoresis', hint: 'A type of scientific technique' },
+      { word: 'chromatography', hint: 'A type of scientific technique' },
+      { word: 'centrifugation', hint: 'A type of scientific technique' },
+    ],
+  },
+  {
+    id: 20,
+    words: [
+      { word: 'filtration', hint: 'A type of scientific technique' },
+      { word: 'distillation', hint: 'A type of scientific technique' },
+      { word: 'crystallization', hint: 'A type of scientific technique' },
+    ],
+  },
+  {
+    id: 21,
+    words: [
+      { word: 'sedimentation', hint: 'A type of scientific technique' },
+      { word: 'dialysis', hint: 'A type of scientific technique' },
+      { word: 'electrolysis', hint: 'A type of scientific technique' },
+    ],
+  },
+  {
+    id: 22,
+    words: [
+      { word: 'fermentation', hint: 'A type of scientific technique' },
+      { word: 'pasteurization', hint: 'A type of scientific technique' },
+      { word: 'sterilization', hint: 'A type of scientific technique' },
+    ],
+  },
+  {
+    id: 23,
+    words: [
+      { word: 'vaccination', hint: 'A type of scientific technique' },
+      { word: 'inoculation', hint: 'A type of scientific technique' },
+      { word: 'hybridization', hint: 'A type of scientific technique' },
+    ],
+  },
+  {
+    id: 24,
+    words: [
+      { word: 'cloning', hint: 'A type of scientific technique' },
+      { word: 'genetic engineering', hint: 'A type of scientific technique' },
+      { word: 'gene therapy', hint: 'A type of scientific technique' },
+    ],
+  },
+  {
+    id: 25,
+    words: [
+      { word: 'biotechnology', hint: 'A type of scientific field' },
+      { word: 'nanotechnology', hint: 'A type of scientific field' },
+      { word: 'robotics', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 26,
+    words: [
+      { word: 'artificial intelligence', hint: 'A type of scientific field' },
+      { word: 'machine learning', hint: 'A type of scientific field' },
+      { word: 'data science', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 27,
+    words: [
+      { word: 'cybersecurity', hint: 'A type of scientific field' },
+      { word: 'networking', hint: 'A type of scientific field' },
+      { word: 'database management', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 28,
+    words: [
+      { word: 'human-computer interaction', hint: 'A type of scientific field' },
+      { word: 'computer vision', hint: 'A type of scientific field' },
+      { word: 'natural language processing', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 29,
+    words: [
+      { word: 'cryptography', hint: 'A type of scientific field' },
+      { word: 'algorithms', hint: 'A type of scientific field' },
+      { word: 'data structures', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 30,
+    words: [
+      { word: 'computer architecture', hint: 'A type of scientific field' },
+      { word: 'operating systems', hint: 'A type of scientific field' },
+      { word: 'software engineering', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 31,
+    words: [
+      { word: 'information systems', hint: 'A type of scientific field' },
+      { word: 'information technology', hint: 'A type of scientific field' },
+      { word: 'management information systems', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 32,
+    words: [
+      { word: 'geographic information systems', hint: 'A type of scientific field' },
+      { word: 'global positioning systems', hint: 'A type of scientific field' },
+      { word: 'remote sensing', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 33,
+    words: [
+      { word: 'cartography', hint: 'A type of scientific field' },
+      { word: 'geodesy', hint: 'A type of scientific field' },
+      { word: 'photogrammetry', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 34,
+    words: [
+      { word: 'surveying', hint: 'A type of scientific field' },
+      { word: 'mapping', hint: 'A type of scientific field' },
+      { word: 'navigation', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 35,
+    words: [
+      { word: 'aeronautics', hint: 'A type of scientific field' },
+      { word: 'astronautics', hint: 'A type of scientific field' },
+      { word: 'space exploration', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 36,
+    words: [
+      { word: 'astrobiology', hint: 'A type of scientific field' },
+      { word: 'astrophysics', hint: 'A type of scientific field' },
+      { word: 'cosmology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 37,
+    words: [
+      { word: 'geology', hint: 'A type of scientific field' },
+      { word: 'geomorphology', hint: 'A type of scientific field' },
+      { word: 'geochemistry', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 38,
+    words: [
+      { word: 'geophysics', hint: 'A type of scientific field' },
+      { word: 'seismology', hint: 'A type of scientific field' },
+      { word: 'volcanology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 39,
+    words: [
+      { word: 'meteorology', hint: 'A type of scientific field' },
+      { word: 'climatology', hint: 'A type of scientific field' },
+      { word: 'atmospheric science', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 40,
+    words: [
+      { word: 'oceanography', hint: 'A type of scientific field' },
+      { word: 'limnology', hint: 'A type of scientific field' },
+      { word: 'hydrology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 41,
+    words: [
+      { word: 'ecology', hint: 'A type of scientific field' },
+      { word: 'conservation biology', hint: 'A type of scientific field' },
+      { word: 'environmental science', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 42,
+    words: [
+      { word: 'botany', hint: 'A type of scientific field' },
+      { word: 'zoology', hint: 'A type of scientific field' },
+      { word: 'microbiology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 43,
+    words: [
+      { word: 'biochemistry', hint: 'A type of scientific field' },
+      { word: 'molecular biology', hint: 'A type of scientific field' },
+      { word: 'genetics', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 44,
+    words: [
+      { word: 'evolutionary biology', hint: 'A type of scientific field' },
+      { word: 'developmental biology', hint: 'A type of scientific field' },
+      { word: 'neuroscience', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 45,
+    words: [
+      { word: 'psychology', hint: 'A type of scientific field' },
+      { word: 'sociology', hint: 'A type of scientific field' },
+      { word: 'anthropology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 46,
+    words: [
+      { word: 'economics', hint: 'A type of scientific field' },
+      { word: 'political science', hint: 'A type of scientific field' },
+      { word: 'geography', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 47,
+    words: [
+      { word: 'history', hint: 'A type of scientific field' },
+      { word: 'philosophy', hint: 'A type of scientific field' },
+      { word: 'linguistics', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 48,
+    words: [
+      { word: 'education', hint: 'A type of scientific field' },
+      { word: 'communication', hint: 'A type of scientific field' },
+      { word: 'journalism', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 49,
+    words: [
+      { word: 'business', hint: 'A type of scientific field' },
+      { word: 'management', hint: 'A type of scientific field' },
+      { word: 'marketing', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 50,
+    words: [
+      { word: 'finance', hint: 'A type of scientific field' },
+      { word: 'accounting', hint: 'A type of scientific field' },
+      { word: 'human resources', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 51,
+    words: [
+      { word: 'engineering', hint: 'A type of scientific field' },
+      { word: 'architecture', hint: 'A type of scientific field' },
+      { word: 'urban planning', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 52,
+    words: [
+      { word: 'computer science', hint: 'A type of scientific field' },
+      { word: 'information technology', hint: 'A type of scientific field' },
+      { word: 'software engineering', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 53,
+    words: [
+      { word: 'data science', hint: 'A type of scientific field' },
+      { word: 'machine learning', hint: 'A type of scientific field' },
+      { word: 'artificial intelligence', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 54,
+    words: [
+      { word: 'cybersecurity', hint: 'A type of scientific field' },
+      { word: 'networking', hint: 'A type of scientific field' },
+      { word: 'database management', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 55,
+    words: [
+      { word: 'human-computer interaction', hint: 'A type of scientific field' },
+      { word: 'computer vision', hint: 'A type of scientific field' },
+      { word: 'natural language processing', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 56,
+    words: [
+      { word: 'cryptography', hint: 'A type of scientific field' },
+      { word: 'algorithms', hint: 'A type of scientific field' },
+      { word: 'data structures', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 57,
+    words: [
+      { word: 'computer architecture', hint: 'A type of scientific field' },
+      { word: 'operating systems', hint: 'A type of scientific field' },
+      { word: 'software engineering', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 58,
+    words: [
+      { word: 'information systems', hint: 'A type of scientific field' },
+      { word: 'information technology', hint: 'A type of scientific field' },
+      { word: 'management information systems', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 59,
+    words: [
+      { word: 'geographic information systems', hint: 'A type of scientific field' },
+      { word: 'global positioning systems', hint: 'A type of scientific field' },
+      { word: 'remote sensing', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 60,
+    words: [
+      { word: 'cartography', hint: 'A type of scientific field' },
+      { word: 'geodesy', hint: 'A type of scientific field' },
+      { word: 'photogrammetry', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 61,
+    words: [
+      { word: 'surveying', hint: 'A type of scientific field' },
+      { word: 'mapping', hint: 'A type of scientific field' },
+      { word: 'navigation', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 62,
+    words: [
+      { word: 'aeronautics', hint: 'A type of scientific field' },
+      { word: 'astronautics', hint: 'A type of scientific field' },
+      { word: 'space exploration', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 63,
+    words: [
+      { word: 'astrobiology', hint: 'A type of scientific field' },
+      { word: 'astrophysics', hint: 'A type of scientific field' },
+      { word: 'cosmology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 64,
+    words: [
+      { word: 'geology', hint: 'A type of scientific field' },
+      { word: 'geomorphology', hint: 'A type of scientific field' },
+      { word: 'geochemistry', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 65,
+    words: [
+      { word: 'geophysics', hint: 'A type of scientific field' },
+      { word: 'seismology', hint: 'A type of scientific field' },
+      { word: 'volcanology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 66,
+    words: [
+      { word: 'meteorology', hint: 'A type of scientific field' },
+      { word: 'climatology', hint: 'A type of scientific field' },
+      { word: 'atmospheric science', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 67,
+    words: [
+      { word: 'oceanography', hint: 'A type of scientific field' },
+      { word: 'limnology', hint: 'A type of scientific field' },
+      { word: 'hydrology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 68,
+    words: [
+      { word: 'ecology', hint: 'A type of scientific field' },
+      { word: 'conservation biology', hint: 'A type of scientific field' },
+      { word: 'environmental science', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 69,
+    words: [
+      { word: 'botany', hint: 'A type of scientific field' },
+      { word: 'zoology', hint: 'A type of scientific field' },
+      { word: 'microbiology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 70,
+    words: [
+      { word: 'biochemistry', hint: 'A type of scientific field' },
+      { word: 'molecular biology', hint: 'A type of scientific field' },
+      { word: 'genetics', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 71,
+    words: [
+      { word: 'evolutionary biology', hint: 'A type of scientific field' },
+      { word: 'developmental biology', hint: 'A type of scientific field' },
+      { word: 'neuroscience', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 72,
+    words: [
+      { word: 'psychology', hint: 'A type of scientific field' },
+      { word: 'sociology', hint: 'A type of scientific field' },
+      { word: 'anthropology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 73,
+    words: [
+      { word: 'economics', hint: 'A type of scientific field' },
+      { word: 'political science', hint: 'A type of scientific field' },
+      { word: 'geography', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 74,
+    words: [
+      { word: 'history', hint: 'A type of scientific field' },
+      { word: 'philosophy', hint: 'A type of scientific field' },
+      { word: 'linguistics', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 75,
+    words: [
+      { word: 'education', hint: 'A type of scientific field' },
+      { word: 'communication', hint: 'A type of scientific field' },
+      { word: 'journalism', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 76,
+    words: [
+      { word: 'business', hint: 'A type of scientific field' },
+      { word: 'management', hint: 'A type of scientific field' },
+      { word: 'marketing', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 77,
+    words: [
+      { word: 'finance', hint: 'A type of scientific field' },
+      { word: 'accounting', hint: 'A type of scientific field' },
+      { word: 'human resources', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 78,
+    words: [
+      { word: 'engineering', hint: 'A type of scientific field' },
+      { word: 'architecture', hint: 'A type of scientific field' },
+      { word: 'urban planning', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 79,
+    words: [
+      { word: 'computer science', hint: 'A type of scientific field' },
+      { word: 'information technology', hint: 'A type of scientific field' },
+      { word: 'software engineering', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 80,
+    words: [
+      { word: 'data science', hint: 'A type of scientific field' },
+      { word: 'machine learning', hint: 'A type of scientific field' },
+      { word: 'artificial intelligence', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 81,
+    words: [
+      { word: 'cybersecurity', hint: 'A type of scientific field' },
+      { word: 'networking', hint: 'A type of scientific field' },
+      { word: 'database management', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 82,
+    words: [
+      { word: 'human-computer interaction', hint: 'A type of scientific field' },
+      { word: 'computer vision', hint: 'A type of scientific field' },
+      { word: 'natural language processing', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 83,
+    words: [
+      { word: 'cryptography', hint: 'A type of scientific field' },
+      { word: 'algorithms', hint: 'A type of scientific field' },
+      { word: 'data structures', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 84,
+    words: [
+      { word: 'computer architecture', hint: 'A type of scientific field' },
+      { word: 'operating systems', hint: 'A type of scientific field' },
+      { word: 'software engineering', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 85,
+    words: [
+      { word: 'information systems', hint: 'A type of scientific field' },
+      { word: 'information technology', hint: 'A type of scientific field' },
+      { word: 'management information systems', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 86,
+    words: [
+      { word: 'geographic information systems', hint: 'A type of scientific field' },
+      { word: 'global positioning systems', hint: 'A type of scientific field' },
+      { word: 'remote sensing', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 87,
+    words: [
+      { word: 'cartography', hint: 'A type of scientific field' },
+      { word: 'geodesy', hint: 'A type of scientific field' },
+      { word: 'photogrammetry', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 88,
+    words: [
+      { word: 'surveying', hint: 'A type of scientific field' },
+      { word: 'mapping', hint: 'A type of scientific field' },
+      { word: 'navigation', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 89,
+    words: [
+      { word: 'aeronautics', hint: 'A type of scientific field' },
+      { word: 'astronautics', hint: 'A type of scientific field' },
+      { word: 'space exploration', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 90,
+    words: [
+      { word: 'astrobiology', hint: 'A type of scientific field' },
+      { word: 'astrophysics', hint: 'A type of scientific field' },
+      { word: 'cosmology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 91,
+    words: [
+      { word: 'geology', hint: 'A type of scientific field' },
+      { word: 'geomorphology', hint: 'A type of scientific field' },
+      { word: 'geochemistry', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 92,
+    words: [
+      { word: 'geophysics', hint: 'A type of scientific field' },
+      { word: 'seismology', hint: 'A type of scientific field' },
+      { word: 'volcanology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 93,
+    words: [
+      { word: 'meteorology', hint: 'A type of scientific field' },
+      { word: 'climatology', hint: 'A type of scientific field' },
+      { word: 'atmospheric science', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 94,
+    words: [
+      { word: 'oceanography', hint: 'A type of scientific field' },
+      { word: 'limnology', hint: 'A type of scientific field' },
+      { word: 'hydrology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 95,
+    words: [
+      { word: 'ecology', hint: 'A type of scientific field' },
+      { word: 'conservation biology', hint: 'A type of scientific field' },
+      { word: 'environmental science', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 96,
+    words: [
+      { word: 'botany', hint: 'A type of scientific field' },
+      { word: 'zoology', hint: 'A type of scientific field' },
+      { word: 'microbiology', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 97,
+    words: [
+      { word: 'biochemistry', hint: 'A type of scientific field' },
+      { word: 'molecular biology', hint: 'A type of scientific field' },
+      { word: 'genetics', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 98,
+    words: [
+      { word: 'evolutionary biology', hint: 'A type of scientific field' },
+      { word: 'developmental biology', hint: 'A type of scientific field' },
+      { word: 'neuroscience', hint: 'A type of scientific field' },
+    ],
+  },
+  {
+    id: 99,
+    words: [
+      { word: 'psychology', hint: 'A type of scientific field' },
+      { word: 'sociology', hint: 'A type of scientific field' },
+      { word: 'anthropology', hint: 'A type of scientific field' },
+    ],
+  },
+
+      {
+        id: 100,
+        words: [
+          { word: 'economics', hint: 'A type of scientific field' },
+          { word: 'political science', hint: 'A type of scientific field' },
+          { word: 'geography', hint: 'A type of scientific field' },
+        ],
+      },
+    ];
+
+    const WordGuessGame = () => {
+  // Assume 'levels' is defined elsewhere and each level has an 'id' and a 'words' array.
+  const [currentLevel, setCurrentLevel] = React.useState(levels[0]);
+  const [currentWordIndex, setCurrentWordIndex] = React.useState(0);
+  const currentWord = currentLevel.words[currentWordIndex];
+  const [guess, setGuess] = React.useState('');
+  const [result, setResult] = React.useState('');
+  const [tries, setTries] = React.useState(6);
+  const [score, setScore] = React.useState(0);
+
+  // Create a state to track which words have been scored per level.
+  const [scoredWords, setScoredWords] = React.useState(() => {
+    const mapping = {};
+    levels.forEach(level => {
+      mapping[level.id] = new Array(level.words.length).fill(false);
+    });
+    return mapping;
+  });
+
+  // Get references to sound elements.
+  const correctSound = document.getElementById('correct-sound');
+  const incorrectSound = document.getElementById('incorrect-sound');
+
+  const handleGuess = () => {
+    // Convert input and current word to lowercase for comparison.
+    if (guess.toLowerCase() === currentWord.word.toLowerCase()) {
+      // Only increase the score if this word has not been scored before.
+      if (!scoredWords[currentLevel.id][currentWordIndex]) {
+        setScore(score + 1);
+        // Mark this word as scored.
+        setScoredWords(prev => {
+          const newMapping = { ...prev };
+          newMapping[currentLevel.id] = [...newMapping[currentLevel.id]];
+          newMapping[currentLevel.id][currentWordIndex] = true;
+          return newMapping;
+        });
+      }
+      
+      setResult('🎉🎉 Congratulations! You guessed the word correctly!');
+      setTries(6);
+      if (correctSound) correctSound.play();
+
+      // Move to the next word in the current level.
+      const nextWordIndex = currentWordIndex + 1;
+      if (nextWordIndex < currentLevel.words.length) {
+        setCurrentWordIndex(nextWordIndex);
+      } else {
+        // If no more words in the current level, move to the next level if available.
+        const nextLevelIndex = levels.indexOf(currentLevel) + 1;
+        if (nextLevelIndex < levels.length) {
+          setCurrentLevel(levels[nextLevelIndex]);
+          setCurrentWordIndex(0);
+        } else {
+          // All levels are completed.
+          setResult('🎉🎉 Congratulations! You completed all levels!');
+        }
+      }
+      setGuess('');
+    } else if (tries > 1) {
+      setTries(tries - 1);
+      setResult(`❌ Incorrect guess. You have ${tries - 1} tries left.`);
+      if (incorrectSound) incorrectSound.play();
+      setGuess('');
+    } else {
+      // When tries run out, reveal the word and reset the game for this level.
+      setResult(`💀 Game over. The word was "${currentWord.word}".`);
+      setTries(6);
+      setCurrentWordIndex(0);
+      setGuess('');
+    }
+  };
+
+  return (
+    <div className="container">
+      <h1>Word Guess Game</h1>
+      <p className="level-info">Level {currentLevel.id}</p>
+      <p className="total-levels">Total Levels: {levels.length}</p>
+      <p>Hint: {currentWord.hint}</p>
+      <div className="input-container">
+        <input
+          type="text"
+          value={guess}
+          onChange={(e) => setGuess(e.target.value)}
+          placeholder="Enter your guess"
+        />
+        <button onClick={handleGuess}>Guess</button>
+      </div>
+      <p className="result">{result}</p>
+      <p className="tries">Tries left: {tries}</p>
+      <p className="score">Score: {score}</p>
+    </div>
+  );
+};
+
+ReactDOM.render(<WordGuessGame />, document.getElementById('root'));
+
+  </script>
+</body>
+</html>
