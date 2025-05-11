@@ -361,7 +361,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Ultimate Memory Game</h1>
+            <h1>Match the cards</h1>
             <p class="subtitle">Test your memory with this challenging card matching game</p>
         </header>
 
@@ -437,12 +437,13 @@
     </div>
 
     <!-- Audio elements -->
-    <audio id="flip-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-card-flip-1939.mp3" preload="auto"></audio>
-    <audio id="match-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" preload="auto"></audio>
-    <audio id="win-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
     <audio id="background-music" loop>
-        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-668.mp3" type="audio/mpeg">
-    </audio>
+        <source src="Audio/memorybackground.mp3" type="audio/mpeg">
+	</audio>
+    <audio id="flip-sound" src="Audio/memorycardflip.mp3" preload="auto"></audio>
+    <audio id="match-sound" src="Audio/memorymatch.mp3" preload="auto"></audio>
+    <audio id="win-sound" src="Audio/numbergrid_level_com.mp3" preload="auto"></audio>
+    
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -486,7 +487,7 @@
                     cols: 4,
                     rows: 4,
                     pairs: 8,
-                    emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'],
+                    emojis: ['🐶', '🦋', '🐭', '🐬', '🐣', '🦊', '🐻', '🐼'],
                     timeBonus: 10,
                     movePenalty: 2
                 },
@@ -494,7 +495,7 @@
                     cols: 4,
                     rows: 5,
                     pairs: 10,
-                    emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯'],
+                    emojis: ['🐶', '🦋', '🐭', '🐬', '🐣', '🦊', '🐻', '🐼', '🐨', '🐍'],
                     timeBonus: 20,
                     movePenalty: 1.5
                 },
@@ -502,7 +503,7 @@
                     cols: 5,
                     rows: 6,
                     pairs: 15,
-                    emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵'],
+                    emojis: ['🐶', '🦋', '🐭', '🐬', '🐣', '🦊', '🐻', '🐼', '🐨', '🐍', '🦁', '🐮', '🐷', '🐸', '🐵'],
                     timeBonus: 30,
                     movePenalty: 1
                 },
@@ -510,7 +511,7 @@
                     cols: 6,
                     rows: 6,
                     pairs: 18,
-                    emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦'],
+                    emojis: ['🐶', '🦋', '🐭', '🐬', '🐣', '🦊', '🐻', '🐼', '🐨', '🐍', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦'],
                     timeBonus: 50,
                     movePenalty: 0.8
                 }

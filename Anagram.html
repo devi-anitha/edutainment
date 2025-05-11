@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anagram Puzzle Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #d35656;
+            margin-bottom: 10px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #7d7d7d;
+        }
+
+        .scrambled-word {
+            font-size: 2.5rem;
+            letter-spacing: 8px;
+            margin: 30px 0;
+            color: #d35656;
+            font-weight: bold;
+            min-height: 60px;
+        }
+
+        .input-container {
+            margin: 20px 0;
+        }
+
+        input {
+            padding: 12px 15px;
+            width: 70%;
+            border: 2px solid #e0c1c1;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        input:focus {
+            border-color: #d35656;
+        }
+
+        button {
+            background: #d35656;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 10px 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #b74747;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin: 15px 0;
+            min-height: 24px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .correct {
+            color: #4CAF50;
+        }
+
+        .incorrect {
+            color: #f44336;
+        }
+
+        .hint {
+            color: #FF9800;
+        }
+
+        .shuffle-animation {
+            animation: shuffle 0.5s;
+        }
+
+        @keyframes shuffle {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            50% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+            100% { transform: rotate(0deg); }
+        }
+    </style>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7811645603854157"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Anagram Puzzle</h1>
+        <p>Unscramble the letters to form a valid word!</p>
+        
+        <div class="game-info">
+            <div>Level: <span id="level">1</span>/5</div>
+            <div>Score: <span id="score">0</span></div>
+            <div>Hints: <span id="hints">3</span></div>
+        </div>
+        
+        <div class="scrambled-word" id="scrambled-word"></div>
+        
+        <div class="message" id="message"></div>
+        
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Your answer...">
+            <button id="submit-btn">Submit</button>
+            <button id="hint-btn">Hint</button>
+            <button id="shuffle-btn">Shuffle</button>
+            <button id="next-btn" disabled>Next</button>
+        </div>
+    </div>
+
+    <script>
+        // Game data with 5 difficulty levels
+        const gameData = [
+            { // Level 1 - Easy (4 letters)
+                words: [
+                    { scrambled: "TAC", answer: "CAT" },
+                    { scrambled: "GDO", answer: "DOG" },
+                    { scrambled: "REA", answer: "EAR" },
+                    { scrambled: "NAP", answer: "PAN" },
+                    { scrambled: "REAT", answer: "TEAR" }
+                ],
+                hint: "Think of common 3-4 letter words"
+            },
+            { // Level 2 - Medium (5 letters)
+                words: [
+                    { scrambled: "ELPAP", answer: "APPLE" },
+                    { scrambled: "ELTAB", answer: "TABLE" },
+                    { scrambled: "REWAT", answer: "WATER" },
+                    { scrambled: "EPHON", answer: "PHONE" },
+                    { scrambled: "HETAC", answer: "CHEAT" }
+                ],
+                hint: "Common 5-letter household items"
+            },
+            { // Level 3 - Hard (6 letters)
+                words: [
+                    { scrambled: "GANERO", answer: "ORANGE" },
+                    { scrambled: "BANLAC", answer: "CABLAN" },
+                    { scrambled: "MROBET", answer: "BROMET" },
+                    { scrambled: "TISCRE", answer: "CRETIS" },
+                    { scrambled: "PENLIS", answer: "PENSIL" }
+                ],
+                hint: "Longer everyday words"
+            },
+            { // Level 4 - Very Hard (7+ letters)
+                words: [
+                    { scrambled: "TEPHALEN", answer: "ELEPHANT" },
+                    { scrambled: "TAINMONU", answer: "MOUNTAIN" },
+                    { scrambled: "HOSTPIAL", answer: "HOSPITAL" },
+                    { scrambled: "TERBUTYFL", answer: "BUTTERFLY" },
+                    { scrambled: "DERUNWAT", answer: "UNDERWAT" }
+                ],
+                hint: "7+ letter words (animals, nature)"
+            },
+            { // Level 5 - Themed (Countries)
+                words: [
+                    { scrambled: "PAINS", answer: "SPAIN" },
+                    { scrambled: "JAPNA", answer: "JAPAN" },
+                    { scrambled: "CANADA", answer: "CANADA" },
+                    { scrambled: "LIBRAZ", answer: "BRAZIL" },
+                    { scrambled: "YTLIA", answer: "ITALY" }
+                ],
+                hint: "Country names"
+            }
+        ];
+
+        // Game state
+        let currentLevel = 0;
+        let currentWordIndex = 0;
+        let score = 0;
+        let hintsLeft = 3;
+        let scrambledWord = "";
+
+        // DOM elements
+        const levelDisplay = document.getElementById('level');
+        const scoreDisplay = document.getElementById('score');
+        const hintsDisplay = document.getElementById('hints');
+        const scrambledWordDisplay = document.getElementById('scrambled-word');
+        const messageDisplay = document.getElementById('message');
+        const userInput = document.getElementById('user-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const shuffleBtn = document.getElementById('shuffle-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        // Initialize game
+        function initGame() {
+            currentLevel = 0;
+            currentWordIndex = 0;
+            score = 0;
+            hintsLeft = 3;
+            updateDisplays();
+            loadWord();
+        }
+
+        // Load current word
+        function loadWord() {
+            const currentWordData = gameData[currentLevel].words[currentWordIndex];
+            scrambledWord = currentWordData.scrambled;
+            displayScrambledWord();
+            messageDisplay.textContent = gameData[currentLevel].hint;
+            messageDisplay.className = 'message hint';
+            userInput.value = '';
+            userInput.focus();
+            nextBtn.disabled = true;
+        }
+
+        // Display scrambled word with animation
+        function displayScrambledWord() {
+            scrambledWordDisplay.textContent = scrambledWord.split('').join(' ');
+            scrambledWordDisplay.classList.add('shuffle-animation');
+            setTimeout(() => {
+                scrambledWordDisplay.classList.remove('shuffle-animation');
+            }, 500);
+        }
+
+        // Shuffle the letters
+        function shuffleLetters() {
+            scrambledWord = scrambledWord.split('').sort(() => Math.random() - 0.5).join('');
+            displayScrambledWord();
+        }
+
+        // Update all displays
+        function updateDisplays() {
+            levelDisplay.textContent = currentLevel + 1;
+            scoreDisplay.textContent = score;
+            hintsDisplay.textContent = hintsLeft;
+        }
+
+        // Check user's answer
+        function checkAnswer() {
+            const userAnswer = userInput.value.trim().toUpperCase();
+            const correctAnswer = gameData[currentLevel].words[currentWordIndex].answer;
+            
+            if (userAnswer === correctAnswer) {
+                score += 10 * (currentLevel + 1); // More points for higher levels
+                messageDisplay.textContent = `Correct! +${10 * (currentLevel + 1)} points`;
+                messageDisplay.className = 'message correct';
+                nextBtn.disabled = false;
+            } else {
+                messageDisplay.textContent = "Incorrect! Try again.";
+                messageDisplay.className = 'message incorrect';
+            }
+            
+            updateDisplays();
+        }
+
+        // Give hint
+        function giveHint() {
+            if (hintsLeft <= 0) {
+                messageDisplay.textContent = "No hints left!";
+                messageDisplay.className = 'message incorrect';
+                return;
+            }
+            
+            const correctAnswer = gameData[currentLevel].words[currentWordIndex].answer;
+            const hintLength = Math.ceil(correctAnswer.length / 2);
+            
+            messageDisplay.textContent = `Hint: The word starts with "${correctAnswer.substring(0, hintLength)}..."`;
+            messageDisplay.className = 'message hint';
+            hintsLeft--;
+            updateDisplays();
+        }
+
+        // Go to next word/level
+        function next() {
+            currentWordIndex++;
+            
+            // Check if level is complete
+            if (currentWordIndex >= gameData[currentLevel].words.length) {
+                currentWordIndex = 0;
+                currentLevel++;
+                
+                // Check if game is complete
+                if (currentLevel >= gameData.length) {
+                    scrambledWordDisplay.textContent = "🎉 You Win! 🎉";
+                    messageDisplay.textContent = `Final Score: ${score}`;
+                    submitBtn.disabled = true;
+                    hintBtn.disabled = true;
+                    nextBtn.disabled = true;
+                    shuffleBtn.disabled = true;
+                    return;
+                } else {
+                    messageDisplay.textContent = `Level ${currentLevel + 1} unlocked!`;
+                }
+            }
+            
+            loadWord();
+        }
+
+        // Event listeners
+        submitBtn.addEventListener('click', checkAnswer);
+        hintBtn.addEventListener('click', giveHint);
+        shuffleBtn.addEventListener('click', shuffleLetters);
+        nextBtn.addEventListener('click', next);
+        
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>

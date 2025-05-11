@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-Jump Peg Solitaire</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .instructions {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #555;
+            max-width: 600px;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(7, 50px);
+            grid-template-rows: repeat(7, 50px);
+            gap: 2px;
+            margin-bottom: 20px;
+        }
+        
+        .cell {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .peg {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: purple;
+            cursor: pointer;
+        }
+        
+        .empty {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ddd;
+        }
+        
+        .possible-move {
+            background: #a8e6cf;
+            animation: pulse 1s infinite;
+        }
+        
+        .selected {
+            background: #aa00aa;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(170, 0, 170, 0.7);
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            min-height: 27px;
+            text-align: center;
+        }
+        
+        .win-message {
+            color: #4CAF50;
+            animation: pulse 1s infinite;
+        }
+        
+        .stats {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .stats h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .stats-table th, .stats-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .stats-table th {
+            background: #f5f5f5;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7811645603854157"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <h1>Auto-Jump Peg Solitaire</h1>
+    <div class="instructions">
+        <p><strong>How to Play:</strong> Click any purple peg to make it automatically jump over an adjacent peg (if possible). Win by leaving just one peg.</p>
+    </div>
+    
+    <div class="game-info">
+        <div>Time: <span id="time">00:00</span></div>
+        <div>Moves: <span id="moves">0</span></div>
+        <div>Pegs: <span id="pegs">32</span></div>
+    </div>
+    
+    <div class="board" id="board"></div>
+    
+    <div class="controls">
+        <button id="new-game">New Game</button>
+        <button id="show-solution">Show Solution</button>
+    </div>
+    
+    <div class="message" id="message"></div>
+    
+    <div class="stats" id="stats" style="display: none;">
+        <h3>Game Statistics</h3>
+        <table class="stats-table">
+            <tr>
+                <th>Metric</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Time Taken</td>
+                <td id="stat-time">-</td>
+            </tr>
+            <tr>
+                <td>Total Moves</td>
+                <td id="stat-moves">-</td>
+            </tr>
+            <tr>
+                <td>Pegs Remaining</td>
+                <td id="stat-pegs">-</td>
+            </tr>
+            <tr>
+                <td>Efficiency Score</td>
+                <td id="stat-score">-</td>
+            </tr>
+        </table>
+        
+        <h3>Best Scores</h3>
+        <table class="stats-table">
+            <tr>
+                <th>Metric</th>
+                <th>Best</th>
+            </tr>
+            <tr>
+                <td>Fastest Time</td>
+                <td id="best-time">-</td>
+            </tr>
+            <tr>
+                <td>Fewest Moves</td>
+                <td id="best-moves">-</td>
+            </tr>
+            <tr>
+                <td>Best Efficiency</td>
+                <td id="best-score">-</td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        // Game state
+        const boardSize = 7;
+        let board = [];
+        let moves = 0;
+        let pegsRemaining = 32;
+        let startTime = null;
+        let timerInterval = null;
+        let showingSolution = false;
+        let solutionInterval = null;
+        
+        // Best scores
+        let bestScores = {
+            time: null,
+            moves: null,
+            score: null
+        };
+
+        // DOM elements
+        const boardElement = document.getElementById('board');
+        const timeElement = document.getElementById('time');
+        const movesElement = document.getElementById('moves');
+        const pegsElement = document.getElementById('pegs');
+        const messageElement = document.getElementById('message');
+        const newGameBtn = document.getElementById('new-game');
+        const showSolutionBtn = document.getElementById('show-solution');
+        const statsElement = document.getElementById('stats');
+        const statTimeElement = document.getElementById('stat-time');
+        const statMovesElement = document.getElementById('stat-moves');
+        const statPegsElement = document.getElementById('stat-pegs');
+        const statScoreElement = document.getElementById('stat-score');
+        const bestTimeElement = document.getElementById('best-time');
+        const bestMovesElement = document.getElementById('best-moves');
+        const bestScoreElement = document.getElementById('best-score');
+
+        // Initialize the game
+        function initGame() {
+            // Clear any existing intervals
+            if (timerInterval) clearInterval(timerInterval);
+            if (solutionInterval) clearInterval(solutionInterval);
+            
+            // Load best scores from local storage
+            loadBestScores();
+            
+            // Create the initial board state (English peg solitaire)
+            board = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
+            
+            // Fill the board with pegs in the classic cross pattern
+            pegsRemaining = 0;
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    // Only place pegs in valid positions (the cross shape)
+                    if ((row < 2 || row > 4) && (col < 2 || col > 4)) {
+                        board[row][col] = null; // Invalid position (no cell)
+                    } else {
+                        board[row][col] = (row === 3 && col === 3) ? 'empty' : 'peg';
+                        if (board[row][col] === 'peg') pegsRemaining++;
+                    }
+                }
+            }
+            
+            // Reset game state
+            moves = 0;
+            showingSolution = false;
+            startTime = new Date();
+            
+            // Start timer
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // Update displays
+            updateDisplays();
+            renderBoard();
+            statsElement.style.display = 'none';
+        }
+
+        // Update all displays
+        function updateDisplays() {
+            movesElement.textContent = moves;
+            pegsElement.textContent = pegsRemaining;
+            updateTimer();
+        }
+
+        // Update the timer display
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const now = new Date();
+            const elapsed = Math.floor((now - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            
+            timeElement.textContent = `${minutes}:${seconds}`;
+        }
+
+        // Render the game board
+        function renderBoard() {
+            boardElement.innerHTML = '';
+            
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    if (board[row][col] === null) {
+                        // Invalid position (no cell)
+                        const cell = document.createElement('div');
+                        cell.style.visibility = 'hidden';
+                        boardElement.appendChild(cell);
+                    } else {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        
+                        if (board[row][col] === 'peg') {
+                            const peg = document.createElement('div');
+                            peg.className = 'peg';
+                            cell.appendChild(peg);
+                        } else {
+                            const empty = document.createElement('div');
+                            empty.className = 'empty';
+                            cell.appendChild(empty);
+                        }
+                        
+                        cell.addEventListener('click', () => handleCellClick(row, col));
+                        boardElement.appendChild(cell);
+                    }
+                }
+            }
+        }
+
+        // Handle cell clicks - automatic jumping
+        function handleCellClick(row, col) {
+            if (showingSolution) return;
+            
+            if (board[row][col] === 'peg') {
+                // Find a valid move from this position
+                const validMove = findValidMove(row, col);
+                
+                if (validMove) {
+                    // Execute the move automatically
+                    executeMove(
+                        row, col, 
+                        validMove.toRow, validMove.toCol,
+                        validMove.jumpedRow, validMove.jumpedCol
+                    );
+                } else {
+                    messageElement.textContent = 'No valid jumps from this peg!';
+                    messageElement.style.color = '#f44336';
+                    setTimeout(updateMessage, 1000);
+                }
+            }
+        }
+
+        // Find a valid move from a position
+        function findValidMove(fromRow, fromCol) {
+            // Check all four possible directions
+            const directions = [
+                { dr: -2, dc: 0 }, // up
+                { dr: 2, dc: 0 },  // down
+                { dr: 0, dc: -2 }, // left
+                { dr: 0, dc: 2 }   // right
+            ];
+            
+            for (const dir of directions) {
+                const toRow = fromRow + dir.dr;
+                const toCol = fromCol + dir.dc;
+                
+                // Check if target position is on the board and empty
+                if (toRow >= 0 && toRow < boardSize && 
+                    toCol >= 0 && toCol < boardSize && 
+                    board[toRow][toCol] === 'empty') {
+                    
+                    const jumpedRow = fromRow + dir.dr/2;
+                    const jumpedCol = fromCol + dir.dc/2;
+                    
+                    if (board[jumpedRow][jumpedCol] === 'peg') {
+                        return {
+                            toRow,
+                            toCol,
+                            jumpedRow,
+                            jumpedCol
+                        };
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        // Execute a valid move
+        function executeMove(fromRow, fromCol, toRow, toCol, jumpedRow, jumpedCol) {
+            board[fromRow][fromCol] = 'empty';
+            board[jumpedRow][jumpedCol] = 'empty';
+            board[toRow][toCol] = 'peg';
+            moves++;
+            pegsRemaining--;
+            
+            updateDisplays();
+            renderBoard();
+            checkWinCondition();
+        }
+
+        // Check if the player has won
+        function checkWinCondition() {
+            if (pegsRemaining === 1) {
+                // Player won!
+                clearInterval(timerInterval);
+                const endTime = new Date();
+                const timeTaken = Math.floor((endTime - startTime) / 1000);
+                
+                // Calculate efficiency score (lower is better)
+                const efficiencyScore = Math.round((moves / 32) * 100);
+                
+                // Update stats
+                statTimeElement.textContent = formatTime(timeTaken);
+                statMovesElement.textContent = moves;
+                statPegsElement.textContent = pegsRemaining;
+                statScoreElement.textContent = efficiencyScore;
+                
+                // Update best scores
+                updateBestScores(timeTaken, moves, efficiencyScore);
+                
+                // Show win message and stats
+                messageElement.textContent = `Congratulations! You won in ${moves} moves!`;
+                messageElement.classList.add('win-message');
+                statsElement.style.display = 'block';
+            } else if (!hasValidMoves()) {
+                // Game over - no valid moves left
+                messageElement.textContent = `Game over! ${pegsRemaining} pegs remaining with no valid moves.`;
+                messageElement.style.color = '#f44336';
+            } else {
+                updateMessage();
+            }
+        }
+
+        // Format time as MM:SS
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Update best scores
+        function updateBestScores(time, moves, score) {
+            let updated = false;
+            
+            // Time (lower is better)
+            if (bestScores.time === null || time < bestScores.time) {
+                bestScores.time = time;
+                bestTimeElement.textContent = formatTime(time);
+                updated = true;
+            }
+            
+            // Moves (lower is better)
+            if (bestScores.moves === null || moves < bestScores.moves) {
+                bestScores.moves = moves;
+                bestMovesElement.textContent = moves;
+                updated = true;
+            }
+            
+            // Efficiency score (lower is better)
+            if (bestScores.score === null || score < bestScores.score) {
+                bestScores.score = score;
+                bestScoreElement.textContent = score;
+                updated = true;
+            }
+            
+            // Save to local storage if updated
+            if (updated) {
+                localStorage.setItem('pegSolitaireBestScores', JSON.stringify(bestScores));
+            }
+        }
+
+        // Load best scores from local storage
+        function loadBestScores() {
+            const savedScores = localStorage.getItem('pegSolitaireBestScores');
+            if (savedScores) {
+                bestScores = JSON.parse(savedScores);
+                
+                // Update display
+                if (bestScores.time !== null) {
+                    bestTimeElement.textContent = formatTime(bestScores.time);
+                }
+                if (bestScores.moves !== null) {
+                    bestMovesElement.textContent = bestScores.moves;
+                }
+                if (bestScores.score !== null) {
+                    bestScoreElement.textContent = bestScores.score;
+                }
+            }
+        }
+
+        // Check if there are any valid moves left
+        function hasValidMoves() {
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    if (board[row][col] === 'peg' && findValidMove(row, col)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Update the status message
+        function updateMessage() {
+            messageElement.textContent = `Find a peg to jump! ${pegsRemaining} pegs left`;
+            messageElement.className = 'message';
+            messageElement.style.color = '#333';
+        }
+
+        // Show a step-by-step solution
+        function showSolution() {
+            if (showingSolution) return;
+            
+            // Reset the game first
+            initGame();
+            showingSolution = true;
+            messageElement.textContent = "Showing solution... (watch closely)";
+            
+            // This is a pre-calculated solution for the English board
+            const solution = [
+                {from: {row: 5, col: 3}, to: {row: 3, col: 3}}, // 1
+                {from: {row: 2, col: 3}, to: {row: 4, col: 3}},    // 2
+                {from: {row: 0, col: 3}, to: {row: 2, col: 3}},    // 3
+                {from: {row: 3, col: 1}, to: {row: 3, col: 3}},    // 4
+                {from: {row: 3, col: 4}, to: {row: 3, col: 2}},    // 5
+                {from: {row: 3, col: 6}, to: {row: 3, col: 4}},    // 6
+                {from: {row: 1, col: 2}, to: {row: 3, col: 2}},    // 7
+                {from: {row: 1, col: 4}, to: {row: 1, col: 2}},    // 8
+                {from: {row: 4, col: 2}, to: {row: 2, col: 2}},    // 9
+                {from: {row: 4, col: 0}, to: {row: 4, col: 2}},    // 10
+                {from: {row: 2, col: 0}, to: {row: 4, col: 0}},    // 11
+                {from: {row: 2, col: 2}, to: {row: 2, col: 0}},    // 12
+                {from: {row: 2, col: 0}, to: {row: 0, col: 0}},    // 13
+                {from: {row: 0, col: 2}, to: {row: 2, col: 2}},    // 14
+                {from: {row: 0, col: 0}, to: {row: 0, col: 2}},    // 15
+                {from: {row: 6, col: 2}, to: {row: 4, col: 2}},    // 16
+                {from: {row: 3, col: 2}, to: {row: 5, col: 2}},    // 17
+                {from: {row: 6, col: 4}, to: {row: 6, col: 2}},    // 18
+                {from: {row: 6, col: 2}, to: {row: 4, col: 2}},    // 19
+                {from: {row: 4, col: 3}, to: {row: 4, col: 1}},    // 20
+                {from: {row: 4, col: 1}, to: {row: 2, col: 1}},    // 21
+                {from: {row: 2, col: 1}, to: {row: 2, col: 3}},    // 22
+                {from: {row: 2, col: 3}, to: {row: 2, col: 5}},    // 23
+                {from: {row: 0, col: 4}, to: {row: 2, col: 4}},    // 24
+                {from: {row: 2, col: 5}, to: {row: 2, col: 3}},    // 25
+                {from: {row: 2, col: 3}, to: {row: 4, col: 3}},    // 26
+                {from: {row: 4, col: 3}, to: {row: 4, col: 5}},    // 27
+                {from: {row: 4, col: 5}, to: {row: 2, col: 5}},    // 28
+                {from: {row: 2, col: 5}, to: {row: 0, col: 5}},    // 29
+                {from: {row: 0, col: 3}, to: {row: 0, col: 5}},    // 30
+                {from: {row: 0, col: 5}, to: {row: 2, col: 5}},    // 31
+                {from: {row: 2, col: 5}, to: {row: 2, col: 3}},    // 32
+                {from: {row: 3, col: 3}, to: {row: 1, col: 3}}     // 33
+            ];
+            
+            let step = 0;
+            solutionInterval = setInterval(() => {
+                if (step >= solution.length) {
+                    clearInterval(solutionInterval);
+                    messageElement.textContent = "Solution complete! Last peg is in the center.";
+                    showingSolution = false;
+                    return;
+                }
+                
+                const move = solution[step];
+                const validMove = findValidMove(move.from.row, move.from.col);
+                
+                if (validMove && 
+                    validMove.toRow === move.to.row && 
+                    validMove.toCol === move.to.col) {
+                    
+                    executeMove(move.from.row, move.from.col, 
+                               move.to.row, move.to.col, 
+                               validMove.jumpedRow, validMove.jumpedCol);
+                    step++;
+                } else {
+                    clearInterval(solutionInterval);
+                    messageElement.textContent = "Solution failed at step " + (step + 1);
+                    showingSolution = false;
+                }
+            }, 800);
+        }
+
+        // Event listeners
+        newGameBtn.addEventListener('click', initGame);
+        showSolutionBtn.addEventListener('click', showSolution);
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
