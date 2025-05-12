@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Matrix Master</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1e1e2a;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+            overflow-x: hidden;
+        }
+        
+        #game-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #64ff64;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(100, 255, 100, 0.5);
+        }
+        
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            background-color: #2a2a3a;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        #game-board-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        #game-board {
+            display: grid;
+            gap: 8px;
+            margin: 0 auto;
+            max-width: 90vw;
+            transition: all 0.5s ease;
+        }
+        
+        .cell {
+            width: 70px;
+            height: 70px;
+            background-color: #32324e;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .cell:hover {
+            transform: scale(1.05);
+        }
+        
+        .cell.active {
+            background-color: #64c864;
+            box-shadow: 0 0 20px rgba(100, 200, 100, 0.7);
+            animation: pulse 0.5s infinite alternate;
+        }
+        
+        .cell.correct {
+            background-color: #64ff64;
+            box-shadow: 0 0 20px rgba(100, 255, 100, 0.7);
+            transform: scale(0.95);
+        }
+        
+        .cell.wrong {
+            background-color: #ff6464;
+            box-shadow: 0 0 20px rgba(255, 100, 100, 0.7);
+            animation: shake 0.5s;
+        }
+        
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        
+        #message {
+            font-size: 1.5em;
+            margin: 20px 0;
+            min-height: 40px;
+            background-color: #2a2a3a;
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .success-message {
+            color: #64ff64;
+            text-shadow: 0 0 10px rgba(100, 255, 100, 0.5);
+        }
+        
+        .failure-message {
+            color: #ff6464;
+            text-shadow: 0 0 10px rgba(255, 100, 100, 0.5);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        button {
+            background-color: #4a4a6a;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1em;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            background-color: #5a5a7a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        #sound-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4a4a6a;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        #instructions {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #2a2a3a;
+            border-radius: 10px;
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        @media (max-width: 600px) {
+            .cell {
+                width: 50px;
+                height: 50px;
+                font-size: 0.8em;
+            }
+            
+            #stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Memory Matrix Master</h1>
+        <div id="stats">
+            <div>Level: <span id="level">1</span></div>
+            <div>Score: <span id="score">0</span></div>
+            <div>Grid: <span id="grid-size">4×4</span></div>
+        </div>
+        <div id="message">Memorize the pattern!</div>
+        
+        <div id="game-board-container">
+            <div id="game-board"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="restart-btn">Restart Game</button>
+            <button id="hint-btn">Hint (Cost: 50)</button>
+        </div>
+        
+        <div id="instructions">
+            <h3>How to Play:</h3>
+            <p>1. Watch as certain cells light up green</p>
+            <p>2. After they disappear, click on the cells that were green</p>
+            <p>3. Correct clicks turn green (+10×level points), wrong clicks turn red (-5×level points)</p>
+            <p>4. Find all correct cells to advance to the next level</p>
+            <p>5. Each level increases the grid size and adds more cells to remember!</p>
+            <p>6. Use hints to reveal one correct cell (costs 50 points)</p>
+        </div>
+    </div>
+
+    <div id="sound-toggle">🔊</div>
+
+    <!-- Audio elements -->
+    <audio id="bg-music" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-668.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="click-sound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="correct-sound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="wrong-sound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="levelup-sound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Game constants
+            const INITIAL_GRID_SIZE = 4;
+            const INITIAL_SHOW_TIME = 1500; // 1.5 seconds
+            const LEVEL_DELAY = 1000; // 1 second
+            const HINT_COST = 50;
+            
+            // Audio elements
+            const bgMusic = document.getElementById('bg-music');
+            const clickSound = document.getElementById('click-sound');
+            const correctSound = document.getElementById('correct-sound');
+            const wrongSound = document.getElementById('wrong-sound');
+            const levelUpSound = document.getElementById('levelup-sound');
+            const soundToggle = document.getElementById('sound-toggle');
+            
+            // Game state
+            let level = 1;
+            let score = 0;
+            let gridSize = INITIAL_GRID_SIZE;
+            let targetCells = [];
+            let gameState = "showing"; // showing, guessing, transition
+            let lastStateChange = 0;
+            let showTime = INITIAL_SHOW_TIME;
+            let soundEnabled = true;
+            
+            // DOM elements
+            const gameBoard = document.getElementById('game-board');
+            const levelDisplay = document.getElementById('level');
+            const scoreDisplay = document.getElementById('score');
+            const gridSizeDisplay = document.getElementById('grid-size');
+            const messageDisplay = document.getElementById('message');
+            const restartBtn = document.getElementById('restart-btn');
+            const hintBtn = document.getElementById('hint-btn');
+            
+            // Initialize game board
+            function initializeBoard(size) {
+                gameBoard.innerHTML = '';
+                gameBoard.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+                
+                // Adjust cell size based on grid size
+                const cellSize = Math.max(30, 80 - size * 5);
+                
+                for (let i = 0; i < size * size; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.index = i;
+                    cell.style.width = `${cellSize}px`;
+                    cell.style.height = `${cellSize}px`;
+                    cell.addEventListener('click', handleCellClick);
+                    gameBoard.appendChild(cell);
+                }
+            }
+            
+            // Play sound with volume control
+            function playSound(sound) {
+                if (!soundEnabled) return;
+                sound.currentTime = 0;
+                sound.volume = 0.3; // Lower volume for better UX
+                sound.play().catch(e => console.log("Audio play failed:", e));
+            }
+            
+            // Start a new game
+            function startGame() {
+                level = 1;
+                score = 0;
+                gridSize = INITIAL_GRID_SIZE;
+                showTime = INITIAL_SHOW_TIME;
+                updateDisplays();
+                initializeBoard(gridSize);
+                generateLevel();
+                
+                // Start background music
+                if (soundEnabled) {
+                    bgMusic.volume = 0.2;
+                    bgMusic.play().catch(e => console.log("Background music play failed:", e));
+                }
+            }
+            
+            // Generate a new level
+            function generateLevel() {
+                targetCells = [];
+                const cells = Array.from(document.querySelectorAll('.cell'));
+                
+                // Clear all cell states
+                cells.forEach(cell => {
+                    cell.className = 'cell';
+                    cell.style.width = `${Math.max(30, 80 - gridSize * 5)}px`;
+                    cell.style.height = `${Math.max(30, 80 - gridSize * 5)}px`;
+                });
+                
+                // Determine number of target cells (increases with level)
+                const numTargets = Math.min(gridSize * gridSize, Math.floor(2 + level * 1.5));
+                
+                // Select random target cells
+                while (targetCells.length < numTargets) {
+                    const randomIndex = Math.floor(Math.random() * gridSize * gridSize);
+                    if (!targetCells.includes(randomIndex)) {
+                        targetCells.push(randomIndex);
+                    }
+                }
+                
+                // Show the pattern
+                gameState = "showing";
+                messageDisplay.textContent = "Memorize the pattern!";
+                messageDisplay.className = "";
+                lastStateChange = Date.now();
+                
+                // Highlight target cells
+                targetCells.forEach(index => {
+                    cells[index].classList.add('active');
+                });
+                
+                // Schedule transition to guessing state
+                setTimeout(() => {
+                    if (gameState === "showing") {
+                        gameState = "guessing";
+                        messageDisplay.textContent = "Click the cells you remember!";
+                        lastStateChange = Date.now();
+                        
+                        // Hide the pattern
+                        cells.forEach(cell => {
+                            cell.classList.remove('active');
+                        });
+                    }
+                }, showTime);
+            }
+            
+            // Handle cell clicks
+            function handleCellClick(e) {
+                if (gameState !== "guessing") return;
+                
+                playSound(clickSound);
+                
+                const cell = e.target;
+                const cellIndex = parseInt(cell.dataset.index);
+                
+                // If cell is already marked, ignore click
+                if (cell.classList.contains('correct') || cell.classList.contains('wrong')) {
+                    return;
+                }
+                
+                // Check if clicked cell is a target
+                if (targetCells.includes(cellIndex)) {
+                    cell.classList.add('correct');
+                    score += 10 * level;
+                    playSound(correctSound);
+                } else {
+                    cell.classList.add('wrong');
+                    score = Math.max(0, score - 5 * level);
+                    playSound(wrongSound);
+                }
+                
+                updateDisplays();
+                
+                // Check if all targets have been found
+                const correctCells = document.querySelectorAll('.correct');
+                if (correctCells.length === targetCells.length) {
+                    gameState = "transition";
+                    messageDisplay.textContent = `Perfect! Level ${level + 1} coming up...`;
+                    messageDisplay.classList.add('success-message');
+                    lastStateChange = Date.now();
+                    level++;
+                    
+                    // Increase grid size every 3 levels
+                    if (level % 3 === 0 && gridSize < 8) {
+                        gridSize++;
+                        showTime = Math.max(800, showTime - 100); // Reduce show time as grid grows
+                        initializeBoard(gridSize);
+                    }
+                    
+                    playSound(levelUpSound);
+                    
+                    // Proceed to next level after delay
+                    setTimeout(() => {
+                        generateLevel();
+                    }, LEVEL_DELAY);
+                }
+            }
+            
+            // Give a hint by revealing one correct cell
+            function giveHint() {
+                if (score < HINT_COST || gameState !== "guessing") return;
+                
+                const cells = Array.from(document.querySelectorAll('.cell'));
+                const unguessedTargets = targetCells.filter(index => 
+                    !cells[index].classList.contains('correct')
+                );
+                
+                if (unguessedTargets.length > 0) {
+                    const randomIndex = unguessedTargets[Math.floor(Math.random() * unguessedTargets.length)];
+                    cells[randomIndex].classList.add('correct');
+                    score -= HINT_COST;
+                    updateDisplays();
+                    playSound(correctSound);
+                }
+            }
+            
+            // Update displays
+            function updateDisplays() {
+                levelDisplay.textContent = level;
+                scoreDisplay.textContent = score;
+                gridSizeDisplay.textContent = `${gridSize}×${gridSize}`;
+                hintBtn.disabled = score < HINT_COST || gameState !== "guessing";
+            }
+            
+            // Toggle sound on/off
+            function toggleSound() {
+                soundEnabled = !soundEnabled;
+                soundToggle.textContent = soundEnabled ? "🔊" : "🔇";
+                
+                if (soundEnabled) {
+                    bgMusic.play().catch(e => console.log("Background music play failed:", e));
+                } else {
+                    bgMusic.pause();
+                }
+            }
+            
+            // Event listeners
+            restartBtn.addEventListener('click', startGame);
+            hintBtn.addEventListener('click', giveHint);
+            soundToggle.addEventListener('click', toggleSound);
+            
+            // Initialize and start the game
+            startGame();
+        });
+    </script>
+</body>
+</html>
