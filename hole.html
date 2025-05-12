@@ -24,7 +24,7 @@
         .game-info {
             display: flex;
             justify-content: space-between;
-            width: 300px;
+            width: 400px;
             margin-bottom: 15px;
             font-size: 18px;
             color: #5f6caf;
@@ -75,6 +75,8 @@
         
         .controls {
             margin-top: 20px;
+            display: flex;
+            gap: 10px;
         }
         
         button {
@@ -98,6 +100,13 @@
             font-weight: bold;
             color: #ff6b6b;
             margin-bottom: 10px;
+        }
+        
+        .level-display {
+            font-size: 20px;
+            color: #5f6caf;
+            margin-bottom: 10px;
+            font-weight: bold;
         }
         
         @keyframes bounce {
@@ -129,31 +138,67 @@
             color: #ff6b6b;
             font-size: 32px;
         }
+        
+        .level-up {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+        }
+        
+        .level-up-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+        }
+        
+        .level-up h2 {
+            color: #5f6caf;
+            font-size: 32px;
+        }
     </style>
-	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7811645603854157"
-     crossorigin="anonymous"></script>
 </head>
 <body>
     <h1>🐹 Whack-a-Mole! 🔨</h1>
     
-    <div class="timer" id="timer">60</div>
+    <div class="level-display" id="level-display">Level: 1</div>
+    <div class="timer" id="timer">30</div>
     
     <div class="game-info">
         <div>Score: <span id="score">0</span></div>
         <div>High Score: <span id="high-score">0</span></div>
+        <div>Level Target: <span id="level-target">10</span></div>
     </div>
     
     <div class="board" id="board"></div>
     
     <div class="controls">
         <button id="start-btn">Start Game</button>
+        <button id="sound-btn">🔊 Sound On</button>
     </div>
     
     <div class="celebration" id="celebration">
         <div class="celebration-content">
             <h2>🎉 Game Over! 🎉</h2>
             <p>Your score: <span id="final-score">0</span></p>
+            <p>Level reached: <span id="final-level">1</span></p>
             <button id="play-again">Play Again</button>
+        </div>
+    </div>
+    
+    <div class="level-up" id="level-up">
+        <div class="level-up-content">
+            <h2>🌟 Level Up! 🌟</h2>
+            <p>You've reached level <span id="new-level">2</span>!</p>
+            <p>Get ready for more moles!</p>
+            <button id="continue-btn">Continue</button>
         </div>
     </div>
 
@@ -161,20 +206,45 @@
         // Game elements
         const holes = [];
         let score = 0;
-        let timeLeft = 60;
+        let timeLeft = 30;
         let gameInterval;
         let moleInterval;
         let highScore = localStorage.getItem('whackamoleHighScore') || 0;
+        let level = 1;
+        let levelTarget = 10;
+        let soundEnabled = true;
+        let gameActive = false;
+        
+        // Game settings by level
+        const levelSettings = [
+            { time: 30, popInterval: 1000, showTime: 800, target: 10 }, // Level 1
+            { time: 30, popInterval: 900, showTime: 700, target: 15 },  // Level 2
+            { time: 30, popInterval: 800, showTime: 600, target: 20 },  // Level 3
+            { time: 30, popInterval: 700, showTime: 500, target: 25 },   // Level 4
+            { time: 30, popInterval: 600, showTime: 400, target: 30 },  // Level 5
+            { time: 30, popInterval: 500, showTime: 300, target: 35 },  // Level 6
+            { time: 30, popInterval: 400, showTime: 250, target: 40 },   // Level 7
+            { time: 30, popInterval: 350, showTime: 200, target: 45 },  // Level 8
+            { time: 30, popInterval: 300, showTime: 150, target: 50 },  // Level 9
+            { time: 30, popInterval: 250, showTime: 100, target: 60 }    // Level 10
+        ];
         
         // DOM elements
         const boardElement = document.getElementById('board');
         const scoreElement = document.getElementById('score');
         const highScoreElement = document.getElementById('high-score');
         const timerElement = document.getElementById('timer');
+        const levelDisplay = document.getElementById('level-display');
+        const levelTargetElement = document.getElementById('level-target');
         const startButton = document.getElementById('start-btn');
+        const soundButton = document.getElementById('sound-btn');
         const celebrationElement = document.getElementById('celebration');
         const finalScoreElement = document.getElementById('final-score');
+        const finalLevelElement = document.getElementById('final-level');
         const playAgainButton = document.getElementById('play-again');
+        const levelUpElement = document.getElementById('level-up');
+        const newLevelElement = document.getElementById('new-level');
+        const continueButton = document.getElementById('continue-btn');
         
         // Initialize the game board
         function initBoard() {
@@ -204,12 +274,33 @@
         function startGame() {
             initBoard();
             score = 0;
-            timeLeft = 60;
+            level = 1;
+            updateLevelSettings();
             updateScore();
             highScoreElement.textContent = highScore;
             startButton.disabled = true;
+            gameActive = true;
             
             // Start game timer
+            startGameTimer();
+            
+            // Start mole popping
+            startMolePopping();
+        }
+        
+        // Update level settings
+        function updateLevelSettings() {
+            const settings = levelSettings[level - 1];
+            timeLeft = settings.time;
+            levelTarget = settings.target;
+            levelDisplay.textContent = `Level: ${level}`;
+            levelTargetElement.textContent = levelTarget;
+            timerElement.textContent = timeLeft;
+        }
+        
+        // Start game timer
+        function startGameTimer() {
+            clearInterval(gameInterval);
             gameInterval = setInterval(() => {
                 timeLeft--;
                 timerElement.textContent = timeLeft;
@@ -218,13 +309,19 @@
                     endGame();
                 }
             }, 1000);
-            
-            // Start mole popping
-            moleInterval = setInterval(popRandomMole, 1000);
+        }
+        
+        // Start mole popping
+        function startMolePopping() {
+            clearInterval(moleInterval);
+            const settings = levelSettings[level - 1];
+            moleInterval = setInterval(popRandomMole, settings.popInterval);
         }
         
         // Make a mole pop up
         function popRandomMole() {
+            if (!gameActive) return;
+            
             // First hide all moles
             holes.forEach(hole => {
                 hole.mole.classList.remove('up');
@@ -237,29 +334,52 @@
             holes[randomIndex].isUp = true;
             
             // Make the mole hide after some time
+            const settings = levelSettings[level - 1];
             setTimeout(() => {
                 if (holes[randomIndex].isUp) {
                     holes[randomIndex].mole.classList.remove('up');
                     holes[randomIndex].isUp = false;
                 }
-            }, 800);
+            }, settings.showTime);
         }
         
         // Whack a mole
         function whackMole(index) {
-            if (holes[index].isUp) {
-                score++;
-                updateScore();
-                holes[index].mole.classList.add('whacked');
-                holes[index].isUp = false;
-                
-                // Play whack sound
-                playSound('whack');
-                
-                setTimeout(() => {
-                    holes[index].mole.classList.remove('up', 'whacked');
-                }, 200);
+            if (!gameActive || !holes[index].isUp) return;
+            
+            score++;
+            updateScore();
+            holes[index].mole.classList.add('whacked');
+            holes[index].isUp = false;
+            
+            // Play whack sound
+            playSound('whack');
+            
+            setTimeout(() => {
+                holes[index].mole.classList.remove('up', 'whacked');
+            }, 200);
+            
+            // Check if level target reached
+            if (score >= levelTarget && level < levelSettings.length) {
+                levelUp();
             }
+        }
+        
+        // Level up
+        function levelUp() {
+            gameActive = false;
+            clearInterval(moleInterval);
+            newLevelElement.textContent = level + 1;
+            levelUpElement.style.display = 'flex';
+        }
+        
+        // Continue to next level
+        function continueToNextLevel() {
+            level++;
+            updateLevelSettings();
+            levelUpElement.style.display = 'none';
+            gameActive = true;
+            startMolePopping();
         }
         
         // Update score display
@@ -269,6 +389,7 @@
         
         // End the game
         function endGame() {
+            gameActive = false;
             clearInterval(gameInterval);
             clearInterval(moleInterval);
             startButton.disabled = false;
@@ -288,20 +409,34 @@
             
             // Show celebration
             finalScoreElement.textContent = score;
+            finalLevelElement.textContent = level;
             celebrationElement.style.display = 'flex';
+            
+            // Play game over sound
+            playSound('game-over');
         }
         
         // Play sound effects
         function playSound(type) {
+            if (!soundEnabled) return;
+            
             const sounds = {
-                'whack': 'https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3',
-                'game-over': 'https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3'
+                'whack': 'Audio/holejump.mp3',
+                'game-over': 'Audio/holegameover.mp3',
+                'level-up': 'Audio/holevelup.mp3'
             };
             
             if (sounds[type]) {
                 const audio = new Audio(sounds[type]);
+                audio.volume = 0.5;
                 audio.play();
             }
+        }
+        
+        // Toggle sound
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            soundButton.textContent = soundEnabled ? "🔊 Sound On" : "🔇 Sound Off";
         }
         
         // Event listeners
@@ -310,10 +445,13 @@
             celebrationElement.style.display = 'none';
             startGame();
         });
+        continueButton.addEventListener('click', continueToNextLevel);
+        soundButton.addEventListener('click', toggleSound);
         
         // Initialize
         initBoard();
         highScoreElement.textContent = highScore;
+        playSound('level-up'); // Preload sound
     </script>
 </body>
 </html>

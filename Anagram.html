@@ -120,11 +120,28 @@
             75% { transform: rotate(5deg); }
             100% { transform: rotate(0deg); }
         }
+
+        .sound-control {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
     </style>
-	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7811645603854157"
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7811645603854157"
      crossorigin="anonymous"></script>
 </head>
 <body>
+    <div class="sound-control" id="sound-control">🔊</div>
+    
     <div class="game-container">
         <h1>Anagram Puzzle</h1>
         <p>Unscramble the letters to form a valid word!</p>
@@ -134,7 +151,27 @@
             <div>Score: <span id="score">0</span></div>
             <div>Hints: <span id="hints">3</span></div>
         </div>
-        
+
+        <!-- Audio elements -->
+        <audio id="background-music" loop>
+            <source src="Audio/additionbackground.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="correct-sound">
+            <source src="Audio/anagramcorrect.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="wrong-sound">
+            <source src="Audio/anagramwrong.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="click-sound">
+            <source src="Audio/anagrambutton.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="shuffle-sound">
+            <source src="Audio/anagramshuffle.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="levelup-sound">
+            <source src="Audio/additionlevelup.mp3" type="audio/mpeg">
+        </audio>
+
         <div class="scrambled-word" id="scrambled-word"></div>
         
         <div class="message" id="message"></div>
@@ -209,6 +246,7 @@
         let score = 0;
         let hintsLeft = 3;
         let scrambledWord = "";
+        let soundEnabled = true;
 
         // DOM elements
         const levelDisplay = document.getElementById('level');
@@ -221,6 +259,15 @@
         const hintBtn = document.getElementById('hint-btn');
         const shuffleBtn = document.getElementById('shuffle-btn');
         const nextBtn = document.getElementById('next-btn');
+        const soundControl = document.getElementById('sound-control');
+
+        // Audio elements
+        const backgroundMusic = document.getElementById('background-music');
+        const correctSound = document.getElementById('correct-sound');
+        const wrongSound = document.getElementById('wrong-sound');
+        const clickSound = document.getElementById('click-sound');
+        const shuffleSound = document.getElementById('shuffle-sound');
+        const levelUpSound = document.getElementById('levelup-sound');
 
         // Initialize game
         function initGame() {
@@ -230,6 +277,38 @@
             hintsLeft = 3;
             updateDisplays();
             loadWord();
+            playBackgroundMusic();
+        }
+
+        // Toggle sound
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            
+            if (soundEnabled) {
+                soundControl.textContent = "🔊";
+                backgroundMusic.play();
+            } else {
+                soundControl.textContent = "🔇";
+                backgroundMusic.pause();
+            }
+        }
+
+        // Play background music
+        function playBackgroundMusic() {
+            if (soundEnabled) {
+                backgroundMusic.volume = 0.5;
+                backgroundMusic.play().catch(e => {
+                    console.log("Autoplay prevented. User interaction needed.");
+                });
+            }
+        }
+
+        // Play sound effect
+        function playSound(sound) {
+            if (soundEnabled) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Sound play failed:", e));
+            }
         }
 
         // Load current word
@@ -255,7 +334,8 @@
 
         // Shuffle the letters
         function shuffleLetters() {
-            scrambledWord = scrambledWord.split('').sort(() => Math.random() - 0.5).join('');
+            playSound(shuffleSound);
+            scrambledWord = scrambledWord.split('').sort(() => Math.random() - 0.7).join('');
             displayScrambledWord();
         }
 
@@ -268,6 +348,7 @@
 
         // Check user's answer
         function checkAnswer() {
+            playSound(clickSound);
             const userAnswer = userInput.value.trim().toUpperCase();
             const correctAnswer = gameData[currentLevel].words[currentWordIndex].answer;
             
@@ -276,9 +357,11 @@
                 messageDisplay.textContent = `Correct! +${10 * (currentLevel + 1)} points`;
                 messageDisplay.className = 'message correct';
                 nextBtn.disabled = false;
+                playSound(correctSound);
             } else {
                 messageDisplay.textContent = "Incorrect! Try again.";
                 messageDisplay.className = 'message incorrect';
+                playSound(wrongSound);
             }
             
             updateDisplays();
@@ -286,6 +369,7 @@
 
         // Give hint
         function giveHint() {
+            playSound(clickSound);
             if (hintsLeft <= 0) {
                 messageDisplay.textContent = "No hints left!";
                 messageDisplay.className = 'message incorrect';
@@ -303,12 +387,14 @@
 
         // Go to next word/level
         function next() {
+            playSound(clickSound);
             currentWordIndex++;
             
             // Check if level is complete
             if (currentWordIndex >= gameData[currentLevel].words.length) {
                 currentWordIndex = 0;
                 currentLevel++;
+                playSound(levelUpSound);
                 
                 // Check if game is complete
                 if (currentLevel >= gameData.length) {
@@ -332,6 +418,7 @@
         hintBtn.addEventListener('click', giveHint);
         shuffleBtn.addEventListener('click', shuffleLetters);
         nextBtn.addEventListener('click', next);
+        soundControl.addEventListener('click', toggleSound);
         
         userInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {

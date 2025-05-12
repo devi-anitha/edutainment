@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Tic-Tac-Toe</title>
+    <title> Tic-Tac-Toe</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -25,7 +25,7 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: skyblue;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -321,7 +321,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Ultimate Tic-Tac-Toe</h1>
+        <h1> Tic-Tac-Toe</h1>
         <p class="subtitle">Challenge our AI in this classic game!</p>
         
         <div class="difficulty-selector">
@@ -367,9 +367,9 @@
 	<audio id="background-music" loop>
         <source src="Audio/tictactoebackground.mp3" type="audio/mpeg">
 	</audio>
-    <audio id="move-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3" preload="auto"></audio>
-    <audio id="win-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
-    <audio id="draw-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
+    <audio id="move-sound" src="Audio/tictactoemove.mp3" preload="auto"></audio>
+    <audio id="win-sound" src="Audio/tictactoewin.mp3" preload="auto"></audio>
+    <audio id="draw-sound" src="Audio/tictactoedraw.mp3" preload="auto"></audio>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -383,6 +383,18 @@
             const scoreO = document.getElementById('score-o');
             const gameStatus = document.getElementById('game-status');
             const historyList = document.getElementById('history-list');
+			const backgroundMusic = document.getElementById('background-music');
+
+// Play background music after first user interaction
+function enableMusic() {
+    backgroundMusic.play().catch(err => {
+        console.log('Autoplay blocked, waiting for user interaction.');
+    });
+    document.removeEventListener('click', enableMusic);
+}
+
+document.addEventListener('click', enableMusic);
+
             
             // Audio Elements
             const moveSound = document.getElementById('move-sound');

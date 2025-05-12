@@ -149,16 +149,33 @@
             background: #f5f5f5;
         }
         
+        .sound-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .sound-btn {
+            background: #2196F3;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        
+        .sound-btn:hover {
+            background: #0b7dda;
+        }
+        
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
     </style>
-	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7811645603854157"
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7811645603854157"
      crossorigin="anonymous"></script>
 </head>
 <body>
+    
     <h1>Auto-Jump Peg Solitaire</h1>
     <div class="instructions">
         <p><strong>How to Play:</strong> Click any purple peg to make it automatically jump over an adjacent peg (if possible). Win by leaving just one peg.</p>
@@ -175,6 +192,11 @@
     <div class="controls">
         <button id="new-game">New Game</button>
         <button id="show-solution">Show Solution</button>
+    </div>
+    
+    <div class="sound-controls">
+        <button class="sound-btn" id="toggle-music">Toggle Music</button>
+        <button class="sound-btn" id="toggle-sounds">Toggle Sounds</button>
     </div>
     
     <div class="message" id="message"></div>
@@ -225,6 +247,23 @@
         </table>
     </div>
 
+    <!-- Audio elements -->
+    <audio id="background-music" loop>
+        <source src="Audio/pegbackground.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="peg-click-sound">
+        <source src="Audio/pegbackclick.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="jump-sound">
+        <source src="Audio/pegjump.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="win-sound">
+        <source src="Audio/pegwin.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="game-over-sound">
+        <source src="Audio/peggameover.mp3" type="audio/mpeg">
+    </audio>
+
     <script>
         // Game state
         const boardSize = 7;
@@ -235,6 +274,10 @@
         let timerInterval = null;
         let showingSolution = false;
         let solutionInterval = null;
+        
+        // Sound settings
+        let soundEnabled = true;
+        let musicEnabled = true;
         
         // Best scores
         let bestScores = {
@@ -259,6 +302,15 @@
         const bestTimeElement = document.getElementById('best-time');
         const bestMovesElement = document.getElementById('best-moves');
         const bestScoreElement = document.getElementById('best-score');
+        const toggleMusicBtn = document.getElementById('toggle-music');
+        const toggleSoundsBtn = document.getElementById('toggle-sounds');
+        
+        // Audio elements
+        const backgroundMusic = document.getElementById('background-music');
+        const pegClickSound = document.getElementById('peg-click-sound');
+        const jumpSound = document.getElementById('jump-sound');
+        const winSound = document.getElementById('win-sound');
+        const gameOverSound = document.getElementById('game-over-sound');
 
         // Initialize the game
         function initGame() {
@@ -294,10 +346,24 @@
             // Start timer
             timerInterval = setInterval(updateTimer, 1000);
             
+            // Start background music if enabled
+            if (musicEnabled) {
+                backgroundMusic.currentTime = 0;
+                backgroundMusic.play().catch(e => console.log("Autoplay prevented:", e));
+            }
+            
             // Update displays
             updateDisplays();
             renderBoard();
             statsElement.style.display = 'none';
+        }
+
+        // Play sound effect if sounds are enabled
+        function playSound(sound) {
+            if (soundEnabled) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Sound play prevented:", e));
+            }
         }
 
         // Update all displays
@@ -358,10 +424,16 @@
             if (showingSolution) return;
             
             if (board[row][col] === 'peg') {
+                // Play peg selection sound
+                playSound(pegClickSound);
+                
                 // Find a valid move from this position
                 const validMove = findValidMove(row, col);
                 
                 if (validMove) {
+                    // Play jump sound
+                    playSound(jumpSound);
+                    
                     // Execute the move automatically
                     executeMove(
                         row, col, 
@@ -449,13 +521,40 @@
                 messageElement.textContent = `Congratulations! You won in ${moves} moves!`;
                 messageElement.classList.add('win-message');
                 statsElement.style.display = 'block';
+                
+                // Play win sound
+                playSound(winSound);
+                
+                // Fade out background music
+                fadeOutMusic();
             } else if (!hasValidMoves()) {
                 // Game over - no valid moves left
                 messageElement.textContent = `Game over! ${pegsRemaining} pegs remaining with no valid moves.`;
                 messageElement.style.color = '#f44336';
+                
+                // Play game over sound
+                playSound(gameOverSound);
+                
+                // Fade out background music
+                fadeOutMusic();
             } else {
                 updateMessage();
             }
+        }
+
+        // Fade out background music
+        function fadeOutMusic() {
+            if (!musicEnabled) return;
+            
+            const fadeAudio = setInterval(() => {
+                if (backgroundMusic.volume > 0.1) {
+                    backgroundMusic.volume -= 0.1;
+                } else {
+                    backgroundMusic.pause();
+                    backgroundMusic.volume = 1.0; // Reset volume for next game
+                    clearInterval(fadeAudio);
+                }
+            }, 200);
         }
 
         // Format time as MM:SS
@@ -513,6 +612,31 @@
                     bestScoreElement.textContent = bestScores.score;
                 }
             }
+            
+            // Load sound settings
+            const soundSettings = localStorage.getItem('pegSolitaireSoundSettings');
+            if (soundSettings) {
+                const settings = JSON.parse(soundSettings);
+                soundEnabled = settings.soundEnabled !== undefined ? settings.soundEnabled : true;
+                musicEnabled = settings.musicEnabled !== undefined ? settings.musicEnabled : true;
+                
+                // Update button text
+                updateSoundButtons();
+            }
+        }
+
+        // Save sound settings to local storage
+        function saveSoundSettings() {
+            localStorage.setItem('pegSolitaireSoundSettings', JSON.stringify({
+                soundEnabled,
+                musicEnabled
+            }));
+        }
+
+        // Update sound buttons text
+        function updateSoundButtons() {
+            toggleMusicBtn.textContent = musicEnabled ? 'Music: ON' : 'Music: OFF';
+            toggleSoundsBtn.textContent = soundEnabled ? 'Sounds: ON' : 'Sounds: OFF';
         }
 
         // Check if there are any valid moves left
@@ -596,6 +720,9 @@
                     validMove.toRow === move.to.row && 
                     validMove.toCol === move.to.col) {
                     
+                    // Play jump sound for solution moves
+                    playSound(jumpSound);
+                    
                     executeMove(move.from.row, move.from.col, 
                                move.to.row, move.to.col, 
                                validMove.jumpedRow, validMove.jumpedCol);
@@ -611,9 +738,28 @@
         // Event listeners
         newGameBtn.addEventListener('click', initGame);
         showSolutionBtn.addEventListener('click', showSolution);
+        
+        // Sound control event listeners
+        toggleMusicBtn.addEventListener('click', () => {
+            musicEnabled = !musicEnabled;
+            if (musicEnabled) {
+                backgroundMusic.play().catch(e => console.log("Play prevented:", e));
+            } else {
+                backgroundMusic.pause();
+            }
+            saveSoundSettings();
+            updateSoundButtons();
+        });
+        
+        toggleSoundsBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            saveSoundSettings();
+            updateSoundButtons();
+        });
 
         // Start the game
         initGame();
+        updateSoundButtons();
     </script>
 </body>
 </html>
